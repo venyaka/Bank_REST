@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:credentials-dev.env[.properties]
   datasource:
     url: ${POSTGRES_URL}
     username: ${POSTGRES_USER}
