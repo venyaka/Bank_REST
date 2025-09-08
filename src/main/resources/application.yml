@@ -19,6 +19,14 @@ liquibase:
   enabled: true
   change-log: classpath:db/migration/db.changelog-master.yaml
 
+sender:
+  mail: ${SENDER_MAIL}
+  password: ${SENDER_PASSWORD}
+  smtp:
+    host: smtp.yandex.ru
+    port: 465
+  email-replace: '@EMAIL@'
+  token-replace: '@TOKEN@'
 jwt:
   secret: ${JWT_SECRET}
   token:
