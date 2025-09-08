@@ -11,7 +11,7 @@ services:
     depends_on:
       - db
     env_file:
-      - ../credentials-docker.env
+      - ../credentials-dev.env
     container_name: bank_rest_backend
     networks:
       - global_net
