@@ -1,3 +1,6 @@
+server:
+  port: ${SERVER_PORT}
+
 spring:
   config:
     import: optional:file:credentials-dev.env[.properties]
@@ -12,8 +15,9 @@ spring:
     hibernate:
       ddl-auto: update
 
-server:
-  port: ${SERVER_PORT}
+liquibase:
+  enabled: true
+  change-log: classpath:db/migration/db.changelog-master.yaml
 
 jwt:
   secret: ${JWT_SECRET}
