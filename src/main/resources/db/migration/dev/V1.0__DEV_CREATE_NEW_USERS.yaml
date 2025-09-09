@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      author: Veniamin
+      id: create_users
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: first_name
+                  value: admin_first_name
+              - column:
+                  name: email
+                  value: admin@gmail.com
+              - column:
+                  name: last_name
+                  value: admin_last_name
+              - column:
+                  name: password
+                  value: $2a$10$ddalByW8laBfsx8wWvNGveGHSm8N4.E6a.D2Vpe5f54nH3vwTEBqu
+              - column:
+                  name: is_email_verificated
+                  valueBoolean: true
+        - sql:
+            sql: INSERT INTO user_role(user_id, user_role) VALUES((SELECT id FROM users WHERE email='admin@gmail.com'), 'ADMIN')
+
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: first_name
+                  value: user_first_name
+              - column:
+                  name: email
+                  value: user@gmail.com
+              - column:
+                  name: last_name
+                  value: user_last_name
+              - column:
+                  name: password
+                  value: $2a$10$ddalByW8laBfsx8wWvNGveGHSm8N4.E6a.D2Vpe5f54nH3vwTEBqu
+              - column:
+                  name: is_email_verificated
+                  valueBoolean: true
+        - sql:
+            sql: INSERT INTO user_role(user_id, user_role) VALUES((SELECT id FROM users WHERE email='user@gmail.com'), 'USER')

@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - includeAll:
+      path: db/migration/V1.0.0
+  - includeAll:
+      path: db/migration/dev
