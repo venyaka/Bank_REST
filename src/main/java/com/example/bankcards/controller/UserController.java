@@ -34,12 +34,6 @@ public class UserController {
         return userService.updateCurrentUser(updateCurrentUserReqDTO);
     }
 
-    @GetMapping("/me")
-    @Operation(summary = "Получение профиля текущего пользователя")
-    public ResponseEntity<UserRespDTO> me() {
-        return ResponseEntity.ok(userService.getCurrentUserInfo());
-    }
-
     @PostMapping("/logout")
     @Operation(summary = "Выход пользователя из системы")
     public void logout(HttpServletResponse response) {
