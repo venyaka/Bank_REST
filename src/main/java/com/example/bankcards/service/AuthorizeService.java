@@ -1,6 +1,7 @@
 package com.example.bankcards.service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import com.example.bankcards.dto.request.RegisterReqDTO;
@@ -9,7 +10,7 @@ import com.example.bankcards.dto.response.TokenRespDTO;
 
 public interface AuthorizeService {
 
-    ResponseEntity<TokenRespDTO> authorizeUser(UserAuthorizeReqDTO userAuthorizeDTO);
+    ResponseEntity<TokenRespDTO> authorizeUser(UserAuthorizeReqDTO userAuthorizeDTO, HttpServletResponse response);
 
     void registerUser(@Valid RegisterReqDTO registerDTO, HttpServletRequest request);
 

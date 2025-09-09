@@ -1,13 +1,13 @@
 package com.example.bankcards.service.impl;
 
+import com.example.bankcards.exception.AuthorizeException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.bankcards.dto.request.RegisterReqDTO;
@@ -39,19 +39,20 @@ public class AuthorizeServiceImpl implements AuthorizeService {
 
     private final JwtUtils jwtUtils;
 
+    private final CookieServiceImpl cookieService;
 
     @Override
-    public ResponseEntity<TokenRespDTO> authorizeUser(UserAuthorizeReqDTO userAuthorizeDTO) {
+    public ResponseEntity<TokenRespDTO> authorizeUser(UserAuthorizeReqDTO userAuthorizeDTO, HttpServletResponse response) {
         String userEmail = userAuthorizeDTO.getEmail();
         String userPassword = userAuthorizeDTO.getPassword();
         Optional<User> userOptional = userRepository.findByEmail(userEmail);
 
         if (userOptional.isEmpty()) {
-            throw new BadCredentialsException(AuthorizedError.USER_WITH_THIS_EMAIL_NOT_FOUND.getMessage());
+            throw new AuthorizeException(AuthorizedError.USER_WITH_THIS_EMAIL_NOT_FOUND);
         }
         User user = userOptional.get();
         if (!passwordEncoder.matches(userPassword, user.getPassword())) {
-            throw new BadCredentialsException(AuthorizedError.NOT_CORRECT_PASSWORD.getMessage());
+            throw new AuthorizeException(AuthorizedError.NOT_CORRECT_PASSWORD);
         }
         checkUserCanAuthorize(user);
         user.setRefreshToken(jwtUtils.generateRandomSequence());
@@ -65,11 +66,9 @@ public class AuthorizeServiceImpl implements AuthorizeService {
 
         sessionService.saveNewSession(user.getId());
 
-        // Возвращаем токены в заголовках
-        return ResponseEntity.ok()
-                .header("Authorization", "Bearer " + jwtToken)
-                .header("Refresh", "Bearer " + refreshToken)
-                .body(tokenDTO);
+        cookieService.addAuthCookies(response, jwtToken, refreshToken);
+
+        return ResponseEntity.ok(tokenDTO);
     }
 
     @Override
@@ -127,7 +126,7 @@ public class AuthorizeServiceImpl implements AuthorizeService {
 
     private void checkUserCanAuthorize(User user) {
         if (!user.getIsEmailVerificated()) {
-            throw new AccessDeniedException(AuthorizedError.USER_NOT_VERIFY.getMessage());
+            throw new AuthorizeException(AuthorizedError.USER_NOT_VERIFY);
         }
     }
 
