@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-card-block-request-table
+      author: Veniamin
+      changes:
+        - createTable:
+            tableName: card_block_request
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: card_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: admin_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: processed_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: admin_comment
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: card_block_request
+            baseColumnNames: card_id
+            referencedTableName: card
+            referencedColumnNames: id
+            constraintName: fk_card_block_request_card
+        - addForeignKeyConstraint:
+            baseTableName: card_block_request
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_card_block_request_user
+        - addForeignKeyConstraint:
+            baseTableName: card_block_request
+            baseColumnNames: admin_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_card_block_request_admin
+
