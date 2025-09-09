@@ -23,7 +23,7 @@ public class Card {
     private String cardNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
     @Column(name = "expire_date", nullable = false)
