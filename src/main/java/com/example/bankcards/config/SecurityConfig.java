@@ -4,6 +4,7 @@ import com.example.bankcards.security.RefreshTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -54,9 +55,28 @@ public class SecurityConfig {
                                 .requestMatchers("/authorize/**").permitAll()
 
                                 .requestMatchers("/users/**").authenticated()
+                                .requestMatchers(HttpMethod.GET, "/cards/{id}").authenticated()
+                                .requestMatchers("/cards/search", "/cards/page").authenticated()
+                                .requestMatchers(HttpMethod.GET, "/cards").authenticated()
+                                .requestMatchers("/cards/{id}/block-request").authenticated()
+                                .requestMatchers("/cards/{id}/balance").authenticated()
+                                .requestMatchers("/cards/block-requests").authenticated()
+                                .requestMatchers("/cards/transfer").authenticated()
 
-                                .requestMatchers("/profile/**").authenticated()
+                                .requestMatchers("/cards", "/cards/{id}").hasAuthority("ADMIN")
+                                .requestMatchers("/cards/{id}/activate").hasAuthority("ADMIN")
+                                .requestMatchers("/cards/{id}/block").hasAuthority("ADMIN")
+                                .requestMatchers("/cards/{id}", "/cards/{id}/delete").hasAuthority("ADMIN")
+                                .requestMatchers("/cards/{id}/update").hasAuthority("ADMIN")
+
+                                .requestMatchers("/cards/{id}/block-request/approve").hasAuthority("ADMIN")
+                                .requestMatchers("/cards/{id}/block-request/reject").hasAuthority("ADMIN")
+                                .requestMatchers("/admin/cards/block-requests/**").hasAuthority("ADMIN")
                                 .requestMatchers("/admin/**").hasAuthority("ADMIN")
+
+                                .requestMatchers("/cards/all").hasAuthority("ADMIN")
+
+
 
                                 .anyRequest().denyAll()
                 )
