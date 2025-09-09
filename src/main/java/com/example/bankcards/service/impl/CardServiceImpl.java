@@ -154,6 +154,16 @@ public class CardServiceImpl implements CardService {
         return dto;
     }
 
+    @Override
+    public void updateCardBalance(Long cardId, java.math.BigDecimal newBalance, User requester) {
+        // ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new NotFoundException(NotFoundError.CARD_NOT_FOUND));
+
+        card.setBalance(newBalance);
+        cardRepository.save(card);
+    }
+
     private Card getCardEntityById(Long cardId, User requester) {
         Optional<Card> cardOpt = cardRepository.findById(cardId);
         if (cardOpt.isEmpty()) throw new NotFoundException(NotFoundError.CARD_NOT_FOUND);

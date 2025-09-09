@@ -31,4 +31,9 @@ public interface CardService {
     List<CardRespDTO> getAllCards();
 
     CardBalanceRespDTO getCardBalance(Long cardId, User requester);
+
+    /**
+     * Тестовый метод для изменения баланса карты (использовать только для тестирования)
+     */
+    void updateCardBalance(Long cardId, java.math.BigDecimal newBalance, User requester);
 }
