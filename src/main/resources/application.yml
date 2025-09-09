@@ -1,5 +1,6 @@
 server:
   port: ${SERVER_PORT}
+  forward-headers-strategy: framework
 
 spring:
   config:
@@ -13,11 +14,21 @@ spring:
     show-sql: true
     generate-ddl: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
 
-liquibase:
-  enabled: true
-  change-log: classpath:db/migration/db.changelog-master.yaml
+  liquibase:
+    contexts: dev
+    enabled: true
+    change-log: classpath:db/migration/db.changelog-master.yaml
+
+  cloud:
+    vault:
+      uri: ${VAULT_ADDR}
+      token: root
+      kv:
+        enabled: true
+        backend: secret
+        default-context: card-encryption
 
 sender:
   mail: ${SENDER_MAIL}
@@ -27,11 +38,16 @@ sender:
     port: 465
   email-replace: '@EMAIL@'
   token-replace: '@TOKEN@'
+
+ipstack:
+  access:
+    key: ${IPSTACK_ACCESS_KEY}
+
 jwt:
   secret: ${JWT_SECRET}
   token:
     time-expiration: 1000000000
-    refresh:
+  token-refresh:
       time-expiration: 10000000000000
 
 springdoc:
@@ -39,3 +55,4 @@ springdoc:
     enabled: true
   api-docs:
     enabled: true
+
