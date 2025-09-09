@@ -1,12 +1,17 @@
 package com.example.bankcards.service.impl;
 
 
+import com.example.bankcards.dto.request.CreateUserReqDTO;
+import com.example.bankcards.dto.request.UpdateUserReqDTO;
+import com.example.bankcards.security.jwt.JwtUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.bankcards.dto.request.UpdateCurrentUserReqDTO;
 import com.example.bankcards.dto.response.UserRespDTO;
@@ -19,6 +24,7 @@ import com.example.bankcards.exception.errors.NotFoundError;
 import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.service.UserService;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,6 +34,10 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+
+    private final PasswordEncoder passwordEncoder;
+
+    private final JwtUtils jwtUtils;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -105,6 +115,43 @@ public class UserServiceImpl implements UserService {
         SecurityContextHolder.clearContext();
     }
 
+    @Override
+    public List<UserRespDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::getResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserRespDTO createUser(CreateUserReqDTO createUserReqDTO) {
+        User user = new User();
+        user.setEmail(createUserReqDTO.getEmail());
+        user.setFirstName(createUserReqDTO.getFirstName());
+        user.setLastName(createUserReqDTO.getLastName());
+        user.setPassword(passwordEncoder.encode(createUserReqDTO.getPassword()));
+        user.setIsEmailVerificated(Boolean.FALSE);
+        user.setToken(generateValidatingToken());
+
+        User saved = userRepository.save(user);
+        return getResponseDTO(saved);
+    }
+
+    @Override
+    public UserRespDTO updateUser(Long id, UpdateUserReqDTO updateUserReqDTO) {
+        User existing = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
+        existing.setFirstName(updateUserReqDTO.getFirstName());
+        existing.setLastName(updateUserReqDTO.getLastName());
+        existing.setRoles(updateUserReqDTO.getRoles());
+        User updated = userRepository.save(existing);
+        return getResponseDTO(updated);
+    }
+
+    @Override
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null || "anonymousUser".equals(authentication.getName())) {
@@ -113,4 +160,9 @@ public class UserServiceImpl implements UserService {
         String email = authentication.getName();
         return userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
     }
+
+    private String generateValidatingToken() {
+        return RandomStringUtils.randomAlphanumeric(50);
+    }
+
 }
