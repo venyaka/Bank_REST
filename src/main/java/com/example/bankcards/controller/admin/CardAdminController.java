@@ -62,10 +62,21 @@ public class CardAdminController {
         cardService.deleteCard(id, user);
     }
 
-    @GetMapping("/all")
+    @GetMapping
     @Operation(summary = "Получить все карты (только для администратора)")
     public List<CardRespDTO> getAllCards() {
         return cardService.getAllCards();
+    }
+
+    /**
+     * Тестовый endpoint для изменения баланса карты (использовать только для тестирования)
+     */
+    @PatchMapping("/{id}/test-balance")
+    @Operation(summary = "Изменить баланс карты (только для тестирования)", description = "Тестовый endpoint. Не использовать в проде!")
+    public ResponseEntity<Void> updateCardBalanceForTest(@PathVariable Long id, @RequestParam("balance") java.math.BigDecimal balance) {
+        User user = getCurrentUser();
+        cardService.updateCardBalance(id, balance, user);
+        return ResponseEntity.noContent().build();
     }
 
     private User getCurrentUser() {
