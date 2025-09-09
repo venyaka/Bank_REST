@@ -33,6 +33,7 @@
         <springdoc-openapi-ui.version>2.7.0</springdoc-openapi-ui.version>
         <apache-tika.version>2.4.0</apache-tika.version>
         <liquibase-core.version>4.26.0</liquibase-core.version>
+        <vault.version>4.3.0</vault.version>
     </properties>
     <dependencies>
         <dependency>
@@ -122,6 +123,13 @@
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
+            <version>${liquibase-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-vault-config</artifactId>
+            <version>${vault.version}</version>
         </dependency>
     </dependencies>
 
