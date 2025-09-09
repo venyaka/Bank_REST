@@ -15,11 +15,11 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: card_number
-                  type: VARCHAR(32)
+                  type: VARCHAR(255)
                   constraints:
                     nullable: false
               - column:
-                  name: user_id
+                  name: owner_id
                   type: BIGINT
                   constraints:
                     nullable: false
@@ -30,7 +30,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: status
-                  type: VARCHAR(16)
+                  type: VARCHAR(32)
                   constraints:
                     nullable: false
               - column:
@@ -40,7 +40,7 @@ databaseChangeLog:
                     nullable: false
         - addForeignKeyConstraint:
             baseTableName: card
-            baseColumnNames: user_id
+            baseColumnNames: owner_id
             referencedTableName: users
             referencedColumnNames: id
             constraintName: fk_card_user
@@ -48,6 +48,5 @@ databaseChangeLog:
             tableName: card
             columns:
               - column:
-                  name: user_id
-            indexName: idx_card_user_id
-
+                  name: owner_id
+            indexName: idx_card_owner_id
