@@ -72,12 +72,8 @@ public class SecurityConfig {
                                 .requestMatchers("/cards/{id}/block-request/approve").hasAuthority("ADMIN")
                                 .requestMatchers("/cards/{id}/block-request/reject").hasAuthority("ADMIN")
                                 .requestMatchers("/admin/cards/block-requests/**").hasAuthority("ADMIN")
+                                .requestMatchers("/admin/cards/{id}/test-balance").hasAuthority("ADMIN")
                                 .requestMatchers("/admin/**").hasAuthority("ADMIN")
-
-                                .requestMatchers("/cards/all").hasAuthority("ADMIN")
-
-
-
                                 .anyRequest().denyAll()
                 )
                 .cors(Customizer.withDefaults())
