@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: dev-create-default-card
+      author: Veniamin
+      changes:
+        - insert:
+            tableName: card
+            columns:
+              - column:
+                  name: card_number
+                  value: '1666005642977658'
+              - column:
+                  name: owner_id
+                  value: 1
+              - column:
+                  name: expire_date
+                  value: "2028-09-10"
+              - column:
+                  name: status
+                  value: 'ACTIVE'
+              - column:
+                  name: balance
+                  value: 0.00
+
