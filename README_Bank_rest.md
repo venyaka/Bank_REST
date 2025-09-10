@@ -36,29 +36,28 @@
 > - Для локального запуска используйте `credentials-dev.env`.
 > - Для запуска через Docker используйте `credentials-docker.env`.
 > - В файле `application.yml` в строке:
-    >   ```yaml
-    >   import: optional:file:credentials-dev.env[.properties]
-    >   ```
-    >   укажите нужный файл, например:
-    >   ```yaml
+>   ```yaml
+>   import: optional:file:credentials-dev.env[.properties]
+>   ```
+>   укажите нужный файл, например:
+>   ```yaml
 >   import: optional:file:credentials-docker.env[.properties]
 >   ```
 > - В `docker-compose.yml` для Docker-окружения используйте:
-    >   ```yaml
+>   ```yaml
 >   env_file:
 >     - credentials-docker.env
 >   ```
+Заполните файл `credentials-docker.env`, затем выполните команду:
 ```bash
 docker-compose --env-file credentials-dev.env up --build
 ```
-Заполните файл `credentials-docker.env`, затем выполните команду:
 - Swagger UI: http://localhost:8185/swagger-ui.html
-  docker-compose --env-file credentials-docker.env up -d
 
 ### 2. Запуск backend через IDE, остальные сервисы — через Docker
 1. Запустите БД через Docker:
    ```bash
-   docker-compose --env-file credentials-docker.env up db
+   docker-compose --env-file credentials-dev.env up db pgadmin vault vault-init
    ```
 2. Убедитесь, что переменные окружения backend соответствуют настройкам БД (см. `application.yml` и `.env`).
 3. Запустите backend из IDE (`Bank_RESTApplication.java`).
