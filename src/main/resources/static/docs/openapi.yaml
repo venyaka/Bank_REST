@@ -1,0 +1,803 @@
+openapi: 3.0.3
+info:
+  title: Bank REST API
+  version: '1.0.0'
+  description: |
+    Полноценный REST API для управления пользователями, банковскими картами, авторизацией, запросами на блокировку и административными функциями.
+    Все защищённые эндпоинты требуют JWT Bearer-токен. Для админских функций требуется роль ADMIN.
+  contact:
+    name: Dev Team
+    email: support@bankcards.local
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:8185
+    description: Dev server
+security:
+  - bearerAuth: []
+tags:
+  - name: Users
+    description: Операции с пользователями
+  - name: Cards
+    description: Операции с картами
+  - name: Auth
+    description: Авторизация и регистрация
+  - name: Admin
+    description: Административные функции
+  - name: BlockRequests
+    description: Запросы на блокировку карт
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UserRespDTO:
+      type: object
+      description: Ответ с данными пользователя
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          example: user@gmail.com
+        firstName:
+          type: string
+          example: Вениамин
+        lastName:
+          type: string
+          example: Ильков
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+          example: [USER]
+    UpdateCurrentUserReqDTO:
+      type: object
+      description: Запрос на обновление текущего пользователя
+      properties:
+        firstName:
+          type: string
+          example: Веня
+        lastName:
+          type: string
+          example: Ильковв
+    RegisterReqDTO:
+      type: object
+      description: Запрос на регистрацию пользователя
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+          example: new@gmail.com
+        password:
+          type: string
+          example: 12345
+        firstName:
+          type: string
+          example: Вениамин
+        lastName:
+          type: string
+          example: Ильков
+    UserAuthorizeReqDTO:
+      type: object
+      description: Запрос на авторизацию пользователя
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@gmail.com
+        password:
+          type: string
+          example: 12345678
+    TokenRespDTO:
+      type: object
+      description: Ответ с access/refresh токенами
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    CardRespDTO:
+      type: object
+      description: Ответ с данными карты
+      properties:
+        id:
+          type: integer
+          example: 1
+        maskedCardNumber:
+          type: string
+          example: '**** **** **** 1234'
+        ownerEmail:
+          type: string
+          example: user@gmail.com
+        expireDate:
+          type: string
+          format: date
+          example: '2026-12-31'
+        status:
+          $ref: '#/components/schemas/CardStatus'
+        balance:
+          type: number
+          format: double
+          example: 1000.50
+    CardBalanceRespDTO:
+      type: object
+      description: Ответ с балансом карты
+      properties:
+        cardId:
+          type: integer
+          example: 1
+        balance:
+          type: number
+          format: double
+          example: 1000.50
+        status:
+          $ref: '#/components/schemas/CardStatus'
+    CardBlockRequestRespDTO:
+      type: object
+      description: Ответ с данными запроса на блокировку карты
+      properties:
+        id:
+          type: integer
+          example: 1
+        cardId:
+          type: integer
+          example: 1
+        cardMaskedNumber:
+          type: string
+          example: '**** **** **** 1234'
+        userId:
+          type: integer
+          example: 2
+        userEmail:
+          type: string
+          example: user@gmail.com
+        status:
+          $ref: '#/components/schemas/CardBlockRequestStatus'
+        createdAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+        adminComment:
+          type: string
+          example: 'Причина блокировки: мошенничество.'
+        adminId:
+          type: integer
+          example: 3
+        adminEmail:
+          type: string
+          example: admin@gmail.com
+    CreateCardReqDTO:
+      type: object
+      description: Запрос на создание карты
+      required: [ownerId]
+      properties:
+        ownerId:
+          type: integer
+          example: 1
+    TransferReqDTO:
+      type: object
+      description: Запрос на перевод между картами
+      required: [fromCardId, toCardId, amount]
+      properties:
+        fromCardId:
+          type: integer
+          example: 1
+        toCardId:
+          type: integer
+          example: 2
+        amount:
+          type: number
+          format: double
+          example: 100.00
+    CreateUserReqDTO:
+      type: object
+      description: Запрос на создание пользователя (админ)
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+          example: admin@gmail.com
+        password:
+          type: string
+          example: adminpass
+        firstName:
+          type: string
+          example: Админ
+        lastName:
+          type: string
+          example: Ильков
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+          example: [ADMIN]
+    UpdateUserReqDTO:
+      type: object
+      description: Запрос на обновление пользователя (админ)
+      properties:
+        firstName:
+          type: string
+          example: Админ
+        lastName:
+          type: string
+          example: Админ
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+          example: [ADMIN]
+    BusinessExceptionRespDTO:
+      type: object
+      description: Ответ при бизнес-ошибке
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: 'Bad Request'
+        message:
+          type: string
+          example: 'Ошибка бизнес-логики'
+        path:
+          type: string
+          example: '/cards/transfer'
+        debugInfo:
+          type: string
+          example: 'Stacktrace...'
+    ValidationExceptionRespDTO:
+      type: object
+      description: Ответ при ошибке валидации
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 422
+        error:
+          type: string
+          example: 'Validation Error'
+        message:
+          type: string
+          example: 'Ошибка валидации данных'
+        path:
+          type: string
+        debugInfo:
+          type: string
+        constraintFailRespDTOList:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConstraintFailRespDTO'
+    ConstraintFailRespDTO:
+      type: object
+      description: Ошибка отдельного поля
+      properties:
+        fieldName:
+          type: string
+          example: 'email'
+        message:
+          type: string
+          example: 'Некорректный email'
+        rejectedValue:
+          type: string
+          example: 'bademail'
+        code:
+          type: string
+          example: 'EmailError'
+    CardStatus:
+      type: string
+      description: Статус карты
+      enum:
+        - ACTIVE
+        - BLOCKED
+        - EXPIRED
+      example: ACTIVE
+    Role:
+      type: string
+      description: Роль пользователя
+      enum:
+        - USER
+        - ADMIN
+      example: USER
+    CardBlockRequestStatus:
+      type: string
+      description: Статус запроса на блокировку карты
+      enum:
+        - PENDING
+        - APPROVED
+        - REJECTED
+      example: PENDING
+paths:
+  /users/info:
+    get:
+      tags: [Users]
+      summary: Получение информации о текущем пользователе
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRespDTO'
+  /users/update:
+    patch:
+      tags: [Users]
+      summary: Обновление текущего пользователя
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateCurrentUserReqDTO'
+      responses:
+        '200':
+          description: Обновлённый пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRespDTO'
+  /users/logout:
+    post:
+      tags: [Users]
+      summary: Выход пользователя из системы
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный выход
+  /cards/{id}:
+    get:
+      tags: [Cards]
+      summary: Получить карту по id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Карта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRespDTO'
+  /cards:
+    get:
+      tags: [Cards]
+      summary: Получить все свои карты
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список карт
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardRespDTO'
+  /cards/transfer:
+    post:
+      tags: [Cards]
+      summary: Перевод между картами
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferReqDTO'
+      responses:
+        '200':
+          description: Успешный перевод
+  /cards/{id}/balance:
+    get:
+      tags: [Cards]
+      summary: Получить баланс карты
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Баланс карты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardBalanceRespDTO'
+  /cards/search:
+    get:
+      tags: [Cards]
+      summary: Поиск карт пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Результаты поиска
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CardRespDTO'
+  /cards/{id}/block-request:
+    post:
+      tags: [BlockRequests]
+      summary: Запросить блокировку своей карты
+      description: Создаёт запрос на блокировку карты по её идентификатору.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор карты
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Запрос на блокировку
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardBlockRequestRespDTO'
+  /cards/block-requests:
+    get:
+      tags: [BlockRequests]
+      summary: Посмотреть свои запросы на блокировку карт
+      description: Возвращает список запросов на блокировку карт текущего пользователя.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список запросов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardBlockRequestRespDTO'
+  /authorize/login:
+    post:
+      tags: [Auth]
+      summary: Авторизация пользователя
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAuthorizeReqDTO'
+      responses:
+        '200':
+          description: Токены доступа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRespDTO'
+  /authorize/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация нового пользователя
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterReqDTO'
+      responses:
+        '200':
+          description: Успешная регистрация
+  /authorize/verificateCode:
+    post:
+      tags: [Auth]
+      summary: Повторная отправка верификационного кода на почту
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Код отправлен
+  /authorize/verification:
+    post:
+      tags: [Auth]
+      summary: Верификация пользователя по email и токену
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Успешная верификация
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: Получить всех пользователей (только для администратора)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserRespDTO'
+    post:
+      tags: [Admin]
+      summary: Создать пользователя (только для администратора)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserReqDTO'
+      responses:
+        '200':
+          description: Созданный пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRespDTO'
+  /admin/users/{id}:
+    patch:
+      tags: [Admin]
+      summary: Обновить пользователя (только для администратора)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserReqDTO'
+      responses:
+        '200':
+          description: Обновлённый пользователь
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRespDTO'
+    delete:
+      tags: [Admin]
+      summary: Удалить пользователя (только для администратора)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Успешное удаление
+  /admin/cards:
+    get:
+      tags: [Admin]
+      summary: Получить все карты (только для администратора)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список карт
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardRespDTO'
+    post:
+      tags: [Admin]
+      summary: Создать новую карту (только для администратора)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCardReqDTO'
+      responses:
+        '200':
+          description: Созданная карта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRespDTO'
+  /admin/cards/{id}/block:
+    patch:
+      tags: [Admin]
+      summary: Заблокировать карту (только для администратора)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Карта заблокирована
+  /admin/cards/{id}/activate:
+    patch:
+      tags: [Admin]
+      summary: Активировать карту (только для администратора)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Карта активирована
+  /admin/cards/{id}:
+    delete:
+      tags: [Admin]
+      summary: Удалить карту (только для администратора)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Карта удалена
+  /admin/cards/block-requests:
+    get:
+      tags: [Admin]
+      summary: Получить все запросы на блокировку карт (только для администратора)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список запросов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardBlockRequestRespDTO'
+  /admin/cards/block-requests/{requestId}/approve:
+    post:
+      tags: [Admin]
+      summary: Подтвердить запрос на блокировку карты (только для администратора)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: comment
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Запрос подтверждён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardBlockRequestRespDTO'
+  /admin/cards/block-requests/{requestId}/reject:
+    post:
+      tags: [Admin]
+      summary: Отклонить запрос на блокировку карты (только для администратора)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: comment
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Запрос отклонён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardBlockRequestRespDTO'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+        '403':
+          description: Нет прав администратора
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+        '404':
+          description: Запрос не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationExceptionRespDTO'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'

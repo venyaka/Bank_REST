@@ -53,6 +53,7 @@ jwt:
 springdoc:
   swagger-ui:
     enabled: true
+    url: /docs/openapi.yaml
   api-docs:
     enabled: true
-
+    path: /v3/api-docs
