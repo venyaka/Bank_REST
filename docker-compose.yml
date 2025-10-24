@@ -21,7 +21,7 @@ services:
     ports:
       - ${POSTGRES_PORT}
     volumes:
-      - /home/user/bankcards/pgdata_ci:/var/lib/postgresql/data
+      - ./pgdata_ci:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
