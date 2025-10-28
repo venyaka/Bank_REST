@@ -16,6 +16,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.example.bankcards.security.ExceptionHandlerFilter;
 import com.example.bankcards.security.jwt.JwtTokenFilter;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
 import java.util.Arrays;
 
@@ -64,7 +65,7 @@ public class SecurityConfig {
                 .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(exceptionHandlerFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtTokenFilter, ExceptionHandlerFilter.class)
-//                .addFilterAfter(refreshTokenFilter, RefreshTokenFilter.class)
+                .addFilterAfter(refreshTokenFilter, JwtTokenFilter.class)
                 .exceptionHandling(Customizer.withDefaults())
                 .authorizeHttpRequests(c ->
                         c
@@ -96,9 +97,8 @@ public class SecurityConfig {
                                 .anyRequest().denyAll()
                 )
                 .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .logout(c -> c.invalidateHttpSession(true).clearAuthentication(true))
-                .sessionManagement(c -> c.maximumSessions(1))
                 .build();
     }
 }
