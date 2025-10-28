@@ -31,12 +31,28 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Глобальный обработчик исключений для REST контроллеров.
+ * <p>
+ * Перехватывает различные типы исключений и формирует стандартизированные
+ * ответы об ошибках в формате JSON. Имеет высший приоритет выполнения
+ * благодаря аннотации {@code @Order(Ordered.HIGHEST_PRECEDENCE)}.
+ * </p>
+ */
 @ControllerAdvice
 @RequiredArgsConstructor
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
+    /**
+     * Обрабатывает исключения типа {@link NotFoundException}.
+     * Возвращает HTTP статус 404 Not Found.
+     *
+     * @param ex      Перехваченное исключение.
+     * @param request HTTP запрос.
+     * @return DTO с информацией об ошибке.
+     */
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
@@ -45,6 +61,15 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return formBusinessExceptionDTO(httpStatusCode, ex.getErrorName(), ex.getMessage(), request.getRequestURI());
     }
 
+    /**
+     * Обрабатывает все остальные исключения, не перехваченные другими обработчиками.
+     * Возвращает HTTP статус 500 Internal Server Error.
+     * Включает в ответ часть стектрейса для отладки.
+     *
+     * @param ex      Перехваченное исключение.
+     * @param request HTTP запрос.
+     * @return DTO с информацией об ошибке.
+     */
     @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
@@ -62,6 +87,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return businessExceptionRespDTO;
     }
 
+    /**
+     * Обрабатывает исключения, связанные с некорректными именами свойств в запросах (например, при сортировке).
+     * Возвращает HTTP статус 400 Bad Request.
+     *
+     * @param ex      Перехваченное исключение.
+     * @param request HTTP запрос.
+     * @return DTO с информацией об ошибке.
+     */
     @ExceptionHandler(PropertyReferenceException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
@@ -70,6 +103,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return formBusinessExceptionDTO(httpStatusCode, "BAD_REQUEST", ex.getMessage(), request.getRequestURI());
     }
 
+    /**
+     * Обрабатывает исключения нарушения ограничений валидации (например, {@code @Valid} на параметрах методов).
+     * Возвращает HTTP статус 400 Bad Request.
+     *
+     * @param ex      Перехваченное исключение.
+     * @param request HTTP запрос.
+     * @return DTO с информацией об ошибке.
+     */
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
@@ -99,7 +140,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(validationExceptionRespDTO, status);
     }
 
-
+    /**
+     * Обрабатывает исключения отказа в доступе (Spring Security).
+     * Возвращает HTTP статус 403 Forbidden.
+     *
+     * @param ex      Перехваченное исключение.
+     * @param request HTTP запрос.
+     * @return DTO с информацией об ошибке.
+     */
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ResponseBody
@@ -109,7 +157,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return formBusinessExceptionDTO(httpStatusCode, errorName, ex.getMessage(), request.getRequestURI());
     }
 
-
+    /**
+     * Обрабатывает исключения аутентификации (Spring Security).
+     * Возвращает HTTP статус 401 Unauthorized.
+     *
+     * @param ex      Перехваченное исключение.
+     * @param request HTTP запрос.
+     * @return DTO с информацией об ошибке.
+     */
     @ExceptionHandler(AuthenticationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
@@ -119,7 +174,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return formBusinessExceptionDTO(httpStatusCode, errorName, ex.getMessage(), request.getRequestURI());
     }
 
-
+    /**
+     * Обрабатывает кастомные исключения {@link BadRequestException}.
+     * Возвращает HTTP статус 400 Bad Request.
+     *
+     * @param ex      Перехваченное исключение.
+     * @param request HTTP запрос.
+     * @return DTO с информацией об ошибке.
+     */
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
@@ -128,6 +190,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return formBusinessExceptionDTO(httpStatusCode, ex.getErrorName(), ex.getMessage(), request.getRequestURI());
     }
 
+    /**
+     * Обрабатывает кастомные исключения {@link AuthorizeException}.
+     * Возвращает HTTP статус 401 Unauthorized.
+     *
+     * @param ex      Перехваченное исключение.
+     * @param request HTTP запрос.
+     * @return DTO с информацией об ошибке.
+     */
     @ExceptionHandler(AuthorizeException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
@@ -136,7 +206,9 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return formBusinessExceptionDTO(httpStatusCode, ex.getErrorName(), ex.getMessage(), request.getRequestURI());
     }
 
-
+    /**
+     * Вспомогательный метод для формирования DTO с общей информацией об ошибке.
+     */
     private BusinessExceptionRespDTO formBusinessExceptionDTO(Long status, String errorName, String message, String path) {
         BusinessExceptionRespDTO businessExceptionRespDTO = new BusinessExceptionRespDTO();
         businessExceptionRespDTO.setError(errorName);
@@ -147,12 +219,18 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return businessExceptionRespDTO;
     }
 
+    /**
+     * Вспомогательный метод для форматирования списка ошибок валидации полей в одну строку.
+     */
     private String validationErrorsFormat(List<FieldError> fieldErrorList) {
         return fieldErrorList.stream()
                 .map(error -> error.getField() + " " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
     }
 
+    /**
+     * Вспомогательный метод для формирования DTO с детализированной информацией об ошибках валидации.
+     */
     private ValidationExceptionRespDTO formValidationExceptionRespDTO(Long status, String errorName, String message, String path, List<FieldError> fieldErrorList) {
         ValidationExceptionRespDTO validationExceptionRespDTO = new ValidationExceptionRespDTO();
         validationExceptionRespDTO.setError(errorName);
