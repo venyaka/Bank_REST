@@ -1,5 +1,11 @@
 package com.example.bankcards.security;
 
+import com.example.bankcards.dto.response.BusinessExceptionRespDTO;
+import com.example.bankcards.exception.AuthorizeException;
+import com.example.bankcards.exception.BadRequestException;
+import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.exception.RestExceptionHandler;
+import com.example.bankcards.security.jwt.JwtTokenFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -7,15 +13,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.example.bankcards.dto.response.BusinessExceptionRespDTO;
-import com.example.bankcards.exception.AuthorizeException;
-import com.example.bankcards.exception.BadRequestException;
-import com.example.bankcards.exception.NotFoundException;
-import com.example.bankcards.exception.RestExceptionHandler;
 
 import java.io.IOException;
 
@@ -40,11 +42,9 @@ import java.io.IOException;
 public class ExceptionHandlerFilter extends OncePerRequestFilter {
 
     private static final String ENCODE = "UTF-8";
-
     private static final String CONTENT_TYPE = "application/json;charset=UTF-8";
 
     private final RestExceptionHandler exceptionHandler;
-
     private final ObjectMapper objectMapper;
 
     @Override
@@ -54,32 +54,30 @@ public class ExceptionHandlerFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } catch (NotFoundException e) {
-            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request, response);
-            response.setStatus(404);
+            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request);
+            response.setStatus(HttpStatus.NOT_FOUND.value());
             response.getWriter().write(objectMapper.writeValueAsString(responseBody));
-
         } catch (AccessDeniedException e) {
-            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request, response);
-            response.setStatus(403);
+            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request);
+            response.setStatus(HttpStatus.FORBIDDEN.value());
             response.getWriter().write(objectMapper.writeValueAsString(responseBody));
         } catch (AuthenticationException e) {
-            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request, response);
-            response.setStatus(401);
+            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request);
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.getWriter().write(objectMapper.writeValueAsString(responseBody));
         } catch (AuthorizeException e) {
-            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request, response);
-            response.setStatus(401);
+            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request);
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.getWriter().write(objectMapper.writeValueAsString(responseBody));
         } catch (BadRequestException e) {
-            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request, response);
-            response.setStatus(400);
+            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(e, request);
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
             response.getWriter().write(objectMapper.writeValueAsString(responseBody));
         } catch (Throwable throwable) {
-            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(throwable, request, response);
-            response.setStatus(500);
+            BusinessExceptionRespDTO responseBody = exceptionHandler.handleExceptions(throwable, request);
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             response.getWriter().write(objectMapper.writeValueAsString(responseBody));
         }
-
     }
 
 }
