@@ -105,20 +105,19 @@ public class User implements UserDetails {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        User user = (User) obj;
+        return id != null && Objects.equals(id, user.id);
+    }
 
-        if (!(obj instanceof User)) {
-            return false;
-        }
-
-        User otherUser = (User) obj;
-
-        return this.getId().equals(otherUser.getId());
-
+    /**
+     * Возвращает хеш-код для объекта User.
+     * Хеш-код основан на идентификаторе (id), что согласуется с реализацией {@link #equals(Object)}.
+     * @return Хеш-код объекта.
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
