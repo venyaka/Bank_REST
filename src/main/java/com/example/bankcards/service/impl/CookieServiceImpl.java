@@ -14,17 +14,20 @@ public class CookieServiceImpl implements CookieService {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addAuthCookies(HttpServletResponse response, String accessToken, String refreshToken) {
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .httpOnly(true)
+//                .secure(true) // Передавать только по HTTPS
                 .path("/")
-                .sameSite("Lax")
+                .sameSite("Strict")
                 .maxAge(15 * 60) // 15 мин
                 .build();
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
-                .path("/")
-                .sameSite("Lax")
+//                .secure(true) // Передавать только по HTTPS
+                .path("/api/authorize/refresh") // Ограничить путь для refresh-токена
+                .sameSite("Strict") // Более строгая политика
                 .maxAge(7 * 24 * 60 * 60) // 7 дней
                 .build();
         response.addHeader("Set-Cookie", accessCookie.toString());
@@ -34,21 +37,23 @@ public class CookieServiceImpl implements CookieService {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void clearAuthCookies(HttpServletResponse response) {
         ResponseCookie access = ResponseCookie.from("accessToken", "")
                 .httpOnly(true)
+//                .secure(true)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite("Strict")
                 .build();
         ResponseCookie refresh = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .path("/")
+//                .secure(true)
+                .path("/api/authorize/refresh")
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite("Strict")
                 .build();
         response.addHeader("Set-Cookie", access.toString());
         response.addHeader("Set-Cookie", refresh.toString());
     }
 }
-
