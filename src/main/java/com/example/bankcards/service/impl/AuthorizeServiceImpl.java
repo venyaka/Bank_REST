@@ -26,6 +26,7 @@ import com.example.bankcards.service.AuthorizeService;
 import java.util.Optional;
 
 @Service
+@Validated
 @RequiredArgsConstructor
 public class AuthorizeServiceImpl implements AuthorizeService {
 
