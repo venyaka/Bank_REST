@@ -73,9 +73,6 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public BusinessExceptionRespDTO handleExceptions(
-            ConstraintViolationException ex, HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
-        Long httpStatusCode = 400L;
     public BusinessExceptionRespDTO handleExceptions(ConstraintViolationException ex, HttpServletRequest request) {
         long httpStatusCode = 400L;
         BusinessExceptionRespDTO businessExceptionRespDTO = formBusinessExceptionDTO(httpStatusCode, "BAD_REQUEST", ex.getMessage(), request.getRequestURI());
@@ -84,8 +81,11 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return businessExceptionRespDTO;
     }
 
-
-//    @Override
+    /**
+     * Переопределяет стандартный обработчик для {@link MethodArgumentNotValidException},
+     * которое возникает при ошибках валидации DTO в теле запроса ({@code @RequestBody}).
+     * Возвращает HTTP статус 400 Bad Request с детализированной информацией по каждой ошибке поля.
+     */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
                                                                   HttpHeaders headers, HttpStatusCode status, WebRequest request) {
