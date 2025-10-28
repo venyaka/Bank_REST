@@ -1,18 +1,18 @@
 package com.example.bankcards.exception;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.bankcards.dto.response.BusinessExceptionRespDTO;
+import com.example.bankcards.dto.response.ConstraintFailRespDTO;
+import com.example.bankcards.dto.response.ValidationExceptionRespDTO;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -25,11 +25,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import com.example.bankcards.dto.response.BusinessExceptionRespDTO;
-import com.example.bankcards.dto.response.ConstraintFailRespDTO;
-import com.example.bankcards.dto.response.ValidationExceptionRespDTO;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -44,40 +40,34 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public BusinessExceptionRespDTO handleExceptions(
-            NotFoundException ex, HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
-        Long httpStatusCode = 404L;
-        BusinessExceptionRespDTO businessExceptionRespDTO = formBusinessExceptionDTO(httpStatusCode, ex.getErrorName(), ex.getMessage(), request.getRequestURI());
-
-        return businessExceptionRespDTO;
+    public BusinessExceptionRespDTO handleExceptions(NotFoundException ex, HttpServletRequest request) {
+        long httpStatusCode = 404L;
+        return formBusinessExceptionDTO(httpStatusCode, ex.getErrorName(), ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
-    public BusinessExceptionRespDTO handleExceptions(Throwable ex, HttpServletRequest request, HttpServletResponse httpServletResponse) {
-        Long httpStatusCode = 500L;
+    public BusinessExceptionRespDTO handleExceptions(Throwable ex, HttpServletRequest request) {
+        long httpStatusCode = 500L;
         String stackTrace = Arrays.stream(ex.getStackTrace())
-                .map(stackTraceElement -> stackTraceElement.toString())
+                .map(StackTraceElement::toString)
                 .reduce("", (frstStr, scndStr) -> frstStr + "\n " + scndStr);
         stackTrace = stackTrace.length() > 200 ? stackTrace.substring(0, 200) : stackTrace;
 
         BusinessExceptionRespDTO businessExceptionRespDTO = formBusinessExceptionDTO(httpStatusCode, "INTERNAL_SERVER_ERROR",
                 ex.getMessage(), request.getRequestURI());
         businessExceptionRespDTO.setDebugInfo(stackTrace);
-
+        log.error("Internal server error: ", ex);
         return businessExceptionRespDTO;
     }
 
     @ExceptionHandler(PropertyReferenceException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public BusinessExceptionRespDTO handleExceptions(
-            PropertyReferenceException ex, HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
-        Long httpStatusCode = 400L;
-        BusinessExceptionRespDTO businessExceptionRespDTO = formBusinessExceptionDTO(httpStatusCode, "BAD_REQUEST", ex.getMessage(), request.getRequestURI());
-
-        return businessExceptionRespDTO;
+    public BusinessExceptionRespDTO handleExceptions(PropertyReferenceException ex, HttpServletRequest request) {
+        long httpStatusCode = 400L;
+        return formBusinessExceptionDTO(httpStatusCode, "BAD_REQUEST", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -86,6 +76,8 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     public BusinessExceptionRespDTO handleExceptions(
             ConstraintViolationException ex, HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
         Long httpStatusCode = 400L;
+    public BusinessExceptionRespDTO handleExceptions(ConstraintViolationException ex, HttpServletRequest request) {
+        long httpStatusCode = 400L;
         BusinessExceptionRespDTO businessExceptionRespDTO = formBusinessExceptionDTO(httpStatusCode, "BAD_REQUEST", ex.getMessage(), request.getRequestURI());
         businessExceptionRespDTO.setDebugInfo(ex.getConstraintViolations().toString());
 
@@ -94,13 +86,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
 
 //    @Override
+    @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-                                                                  HttpHeaders headers, HttpStatus status, WebRequest request) {
+                                                                  HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 
-        Long httpStatusCode = 400L;
+        long httpStatusCode = 400L;
         String debugInfo = ex.getMessage();
         ValidationExceptionRespDTO validationExceptionRespDTO = formValidationExceptionRespDTO(httpStatusCode, "BAD_REQUEST", validationErrorsFormat(ex.getFieldErrors()),
-                ((ServletWebRequest) request).getRequest().getRequestURI().toString(), ex.getFieldErrors());
+                ((ServletWebRequest) request).getRequest().getRequestURI(), ex.getFieldErrors());
         validationExceptionRespDTO.setDebugInfo(debugInfo);
 
         return new ResponseEntity<>(validationExceptionRespDTO, status);
@@ -110,12 +103,9 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ResponseBody
-    public BusinessExceptionRespDTO handleExceptions(
-            AccessDeniedException ex, HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
-
-        Long httpStatusCode = 403L;
+    public BusinessExceptionRespDTO handleExceptions(AccessDeniedException ex, HttpServletRequest request) {
+        long httpStatusCode = 403L;
         String errorName = "FORBIDDEN";
-
         return formBusinessExceptionDTO(httpStatusCode, errorName, ex.getMessage(), request.getRequestURI());
     }
 
@@ -123,11 +113,9 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
-    public BusinessExceptionRespDTO handleExceptions(
-            AuthenticationException ex, HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
-        Long httpStatusCode = 401L;
-        String errorName = "BAD CREDENTIALS";
-
+    public BusinessExceptionRespDTO handleExceptions(AuthenticationException ex, HttpServletRequest request) {
+        long httpStatusCode = 401L;
+        String errorName = "BAD_CREDENTIALS";
         return formBusinessExceptionDTO(httpStatusCode, errorName, ex.getMessage(), request.getRequestURI());
     }
 
@@ -135,20 +123,16 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public BusinessExceptionRespDTO handleExceptions(
-            BadRequestException ex, HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
-        Long httpStatusCode = 400L;
-
+    public BusinessExceptionRespDTO handleExceptions(BadRequestException ex, HttpServletRequest request) {
+        long httpStatusCode = 400L;
         return formBusinessExceptionDTO(httpStatusCode, ex.getErrorName(), ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(AuthorizeException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
-    public BusinessExceptionRespDTO handleExceptions(
-            AuthorizeException ex, HttpServletRequest request, HttpServletResponse httpServletResponse) throws IOException {
-        Long httpStatusCode = 401L;
-
+    public BusinessExceptionRespDTO handleExceptions(AuthorizeException ex, HttpServletRequest request) {
+        long httpStatusCode = 401L;
         return formBusinessExceptionDTO(httpStatusCode, ex.getErrorName(), ex.getMessage(), request.getRequestURI());
     }
 
@@ -164,13 +148,9 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private String validationErrorsFormat(List<FieldError> fieldErrorList) {
-        StringBuilder sb = new StringBuilder();
-        fieldErrorList.stream().forEach(error -> {
-            String fieldName = error.getField();
-            String defaultMessage = error.getDefaultMessage();
-            sb.append(fieldName + " " + defaultMessage + " ");
-        });
-        return sb.toString();
+        return fieldErrorList.stream()
+                .map(error -> error.getField() + " " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
     }
 
     private ValidationExceptionRespDTO formValidationExceptionRespDTO(Long status, String errorName, String message, String path, List<FieldError> fieldErrorList) {
