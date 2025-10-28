@@ -1,10 +1,10 @@
 package com.example.bankcards.util;
 
-public class MailUtils {
 /**
  * Утилитарный класс, содержащий константы для отправки электронных писем.
  * Включает заголовки, HTML-шаблоны и плейсхолдеры.
  */
+public final class MailUtils {
 
     /**
      * Приватный конструктор для предотвращения инстанцирования.
@@ -28,7 +28,7 @@ public class MailUtils {
      * Содержит плейсхолдер {@link #LINK} для вставки ссылки.
      */
     public static final String ACCOUNT_VERIFY_TEMPLATE = " <div>\n" +
-            "            <h3>Здраствуйте!</h3>\n" +
+            "            <h3>Здравствуйте!</h3>\n" +
             "            <p style=\"font-size: 20px;\">Ссылка для подтверждения аккаунта</p>\n" +
             "                    \n" +
             "            <p style=\"font-size: 20px;\">@LINK@</p>\n" +
@@ -40,7 +40,7 @@ public class MailUtils {
      * Содержит плейсхолдер {@link #LINK} для вставки ссылки.
      */
     public static final String CHANGE_PASSWORD_TEMPLATE = "     <div>\n" +
-            "            <h3>Здраствуйте!</h3>\n" +
+            "            <h3>Здравствуйте!</h3>\n" +
             "            <p style=\"font-size: 20px;\">Ссылка для смены пароля:</p>\n" +
             "                    \n" +
             "            <p style=\"font-size: 20px;\">@LINK@</p>\n" +
@@ -51,6 +51,5 @@ public class MailUtils {
      * Плейсхолдер для вставки URL-ссылки в шаблоны писем.
      */
     public static final String LINK = "@LINK@";
-
 
 }
