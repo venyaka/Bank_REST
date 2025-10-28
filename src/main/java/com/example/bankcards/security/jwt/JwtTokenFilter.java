@@ -1,5 +1,11 @@
 package com.example.bankcards.security.jwt;
 
+import com.example.bankcards.constant.PathConstants;
+import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.AuthorizeException;
+import com.example.bankcards.exception.errors.AuthorizedError;
+import com.example.bankcards.repository.UserRepository;
+import com.example.bankcards.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -10,12 +16,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.example.bankcards.constant.PathConstants;
-import com.example.bankcards.entity.User;
-import com.example.bankcards.exception.AuthorizeException;
-import com.example.bankcards.exception.errors.AuthorizedError;
-import com.example.bankcards.repository.UserRepository;
-import com.example.bankcards.service.UserService;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -48,33 +48,37 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String accessToken = getCookieValue(request, "accessToken");
         if (accessToken != null && !accessToken.isBlank()) {
             try {
+                // 1. Попытка валидации access-токена
                 jwtUtils.validateToken(accessToken);
                 String email = jwtUtils.getUserEmailFromToken(accessToken);
                 User user = (User) userService.loadUserByUsername(email);
                 SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(email, null, user.getAuthorities()));
             } catch (AuthorizeException ex) {
-
+                // 2. Если access-токен истек, пытаемся его обновить
                 if (AuthorizedError.TOKEN_WAS_EXPIRED.name().equals(ex.getErrorName())) {
                     String refreshJwt = getCookieValue(request, "refreshToken");
                     if (refreshJwt != null) {
                         try {
+                            // 3. Валидация refresh-токена
                             if (jwtUtils.validateRefreshToken(refreshJwt)) {
                                 String email = jwtUtils.getUserEmailFromToken(refreshJwt);
                                 User user = userRepository.findByEmail(email).orElse(null);
                                 if (user != null) {
-                                    // Ротация refresh и выпуск нового access
+                                    // 4. Ротация токенов: выпуск новой пары access и refresh
                                     user.setRefreshToken(jwtUtils.generateRandomSequence());
                                     String newAccess = jwtUtils.generateToken(user);
                                     String newRefresh = jwtUtils.generateRefreshToken(user);
                                     userRepository.saveAndFlush(user);
-                                    // Установить новые cookie
+
+                                    // 5. Установка новых токенов в HttpOnly cookie
                                     addHttpOnlyCookie(response, "accessToken", newAccess, 15 * 60); // 15 мин
                                     addHttpOnlyCookie(response, "refreshToken", newRefresh, 7 * 24 * 60 * 60); // 7 дней
                                     SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(email, null, user.getAuthorities()));
                                 }
                             }
                         } catch (Exception ignore) {
-
+                            // Игнорируем ошибки при обновлении, чтобы не прерывать запрос.
+                            // Пользователь просто останется неаутентифицированным.
                         }
                     }
                 }
@@ -108,13 +112,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
      * @param maxAgeSeconds Время жизни cookie в секундах.
      */
     private void addHttpOnlyCookie(HttpServletResponse response, String name, String value, int maxAgeSeconds) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(name).append("=").append(value).append(";")
-          .append(" Path=/;")
-          .append(" HttpOnly;")
-          .append(" Max-Age=").append(maxAgeSeconds).append(";")
-          .append(" SameSite=Lax");
-        response.addHeader("Set-Cookie", sb.toString());
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(maxAgeSeconds);
+        // cookie.setSecure(true); // ВАЖНО: Раскомментируйте эту строку в production при использовании HTTPS
+        response.addCookie(cookie);
     }
 
     /**
