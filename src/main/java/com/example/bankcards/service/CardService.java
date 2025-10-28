@@ -8,6 +8,7 @@ import com.example.bankcards.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface CardService {
@@ -35,5 +36,5 @@ public interface CardService {
     /**
      * Тестовый метод для изменения баланса карты (использовать только для тестирования)
      */
-    void updateCardBalance(Long cardId, java.math.BigDecimal newBalance, User requester);
+    void updateCardBalance(Long cardId, BigDecimal newBalance, User requester);
 }
