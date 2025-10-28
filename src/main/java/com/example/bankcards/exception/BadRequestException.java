@@ -7,6 +7,7 @@ import com.example.bankcards.exception.errors.BadRequestError;
 public class BadRequestException extends BusinessException {
 
     private String errorName;
+    private final String errorName;
 
     public BadRequestException(BadRequestError badRequestError) {
         super(badRequestError.getMessage());

@@ -7,6 +7,7 @@ import com.example.bankcards.exception.errors.NotFoundError;
 public class NotFoundException extends BusinessException {
 
     private String errorName;
+    private final String errorName;
 
     public NotFoundException(NotFoundError notFoundError) {
         super(notFoundError.getMessage());

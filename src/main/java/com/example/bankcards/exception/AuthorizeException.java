@@ -7,6 +7,7 @@ import com.example.bankcards.exception.errors.AuthorizedError;
 public class AuthorizeException extends BusinessException {
 
     private String errorName;
+    private final String errorName;
 
     public AuthorizeException(AuthorizedError authorizedError) {
         super(authorizedError.getMessage());
