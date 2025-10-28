@@ -2,9 +2,19 @@ package com.example.bankcards.entity;
 
 import org.springframework.security.core.GrantedAuthority;
 
+/**
+ * Представляет роли, которые может иметь пользователь.
+ */
 public enum Role implements GrantedAuthority {
 
-    USER, ADMIN;
+    /**
+     * Стандартная роль пользователя.
+     */
+    USER,
+    /**
+     * Роль администратора с повышенными привилегиями.
+     */
+    ADMIN;
 
     @Override
     public String getAuthority() {
