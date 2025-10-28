@@ -1,7 +1,14 @@
 package com.example.bankcards.util;
 
+import com.example.bankcards.exception.EncryptionException;
+import com.example.bankcards.exception.errors.EncryptionError;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.Base64;
 
 /**
@@ -41,13 +48,13 @@ public class CardEncryptor {
     private byte[] getKey() {
         String key = vaultService.getEncryptionKey();
         if (key == null) {
-            throw new RuntimeException("Ключ шифрования не получен из Vault");
+            throw new EncryptionException(EncryptionError.ENCRYPTION_KEY_NOT_FOUND);
         }
         int len = key.length();
         if (len != 16 && len != 24 && len != 32) {
-            throw new RuntimeException("Неверная длина ключа для AES: " + len + ". Ожидается 16, 24 или 32 символа.");
+            throw new EncryptionException(EncryptionError.INVALID_KEY_LENGTH);
         }
-        return key.getBytes();
+        return key.getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -60,13 +67,12 @@ public class CardEncryptor {
     public String encrypt(String pan) {
         try {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
-            SecretKeySpec keySpec = new SecretKeySpec(getKey(), ALGORITHM);
+            SecretKeySpec keySpec = new SecretKeySpec(getKey(), ALGORITHM_NAME);
             cipher.init(Cipher.ENCRYPT_MODE, keySpec);
-            byte[] encrypted = cipher.doFinal(pan.getBytes());
-            String result = Base64.getEncoder().encodeToString(encrypted);
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка шифрования номера карты", e);
+            byte[] encrypted = cipher.doFinal(pan.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(encrypted);
+        } catch (GeneralSecurityException e) {
+            throw new EncryptionException(EncryptionError.ENCRYPTION_FAILED);
         }
     }
 
@@ -80,13 +86,12 @@ public class CardEncryptor {
     public String decrypt(String encryptedPan) {
         try {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
-            SecretKeySpec keySpec = new SecretKeySpec(getKey(), ALGORITHM);
+            SecretKeySpec keySpec = new SecretKeySpec(getKey(), ALGORITHM_NAME);
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
             byte[] decoded = Base64.getDecoder().decode(encryptedPan);
-            String result = new String(cipher.doFinal(decoded));
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка дешифрования номера карты", e);
+            return new String(cipher.doFinal(decoded), StandardCharsets.UTF_8);
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
+            throw new EncryptionException(EncryptionError.DECRYPTION_FAILED);
         }
     }
 }
