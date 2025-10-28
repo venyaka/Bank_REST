@@ -1,5 +1,11 @@
 package com.example.bankcards.security.jwt;
 
+import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.AuthorizeException;
+import com.example.bankcards.exception.BadRequestException;
+import com.example.bankcards.exception.errors.AuthorizedError;
+import com.example.bankcards.exception.errors.BadRequestError;
+import com.example.bankcards.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
@@ -8,12 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import com.example.bankcards.entity.User;
-import com.example.bankcards.exception.AuthorizeException;
-import com.example.bankcards.exception.BadRequestException;
-import com.example.bankcards.exception.errors.AuthorizedError;
-import com.example.bankcards.exception.errors.BadRequestError;
-import com.example.bankcards.repository.UserRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -49,7 +49,6 @@ public class JwtUtils {
      */
     public String generateToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getEmail());
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         claims.put("typeToken", "access");
 
         return Jwts.builder()
@@ -57,8 +56,7 @@ public class JwtUtils {
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationTime))
                 .setIssuedAt(new Date())
                 .setNotBefore(new Date())
-                .signWith(key).compact();
-
+                .signWith(getSigningKey()).compact();
     }
 
     /**
@@ -72,15 +70,13 @@ public class JwtUtils {
         Claims claims = Jwts.claims().setSubject(user.getEmail());
         claims.put("refreshToken", user.getRefreshToken());
         claims.put("typeToken", "refresh");
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 
         return Jwts.builder()
                 .setClaims(claims)
                 .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpirationTime))
                 .setIssuedAt(new Date())
                 .setNotBefore(new Date())
-                .signWith(key).compact();
-
+                .signWith(getSigningKey()).compact();
     }
 
     /**
@@ -103,16 +99,20 @@ public class JwtUtils {
         } catch (AuthorizeException exception) {
             throw new BadRequestException(BadRequestError.NOT_CORRECT_REFRESH_TOKEN.getMessage() + " " + exception.getMessage(), BadRequestError.NOT_CORRECT_REFRESH_TOKEN.name());
         }
-        Optional<User> optionalUser = userRepository.findByEmail(getUserEmailFromToken(token));
+
+        Claims claims = getAllClaimsFromToken(token);
+        String email = claims.getSubject();
+        String givenRefreshToken = (String) claims.get("refreshToken");
+
+        Optional<User> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isEmpty()) {
             throw new BadRequestException(BadRequestError.NOT_CORRECT_REFRESH_TOKEN);
         }
+
         User user = optionalUser.get();
-
         String correctRefreshToken = user.getRefreshToken();
-        String givenRefreshToken = getRefreshStringFromToken(token);
-        return correctRefreshToken.equals(givenRefreshToken);
 
+        return correctRefreshToken.equals(givenRefreshToken);
     }
 
     /**
@@ -124,8 +124,7 @@ public class JwtUtils {
      */
     public boolean validateToken(String token) {
         try {
-            Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-            Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
+            Jwts.parser().setSigningKey(getSigningKey()).parseClaimsJws(token);
             return true;
         } catch (MalformedJwtException | UnsupportedJwtException | IllegalArgumentException | SignatureException |
                  DecodingException ex) {
@@ -142,10 +141,7 @@ public class JwtUtils {
      * @return Email пользователя.
      */
     public String getUserEmailFromToken(String token) {
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
-        return claims.getSubject();
-
+        return getAllClaimsFromToken(token).getSubject();
     }
 
     /**
@@ -155,9 +151,7 @@ public class JwtUtils {
      * @return Уникальная строка.
      */
     public String getRefreshStringFromToken(String token) {
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
-        return (String) claims.get("refreshToken");
+        return (String) getAllClaimsFromToken(token).get("refreshToken");
     }
 
     /**
@@ -167,9 +161,7 @@ public class JwtUtils {
      * @return Тип токена.
      */
     public String getTypeTokenFromToken(String token) {
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
-        return (String) claims.get("typeToken");
+        return (String) getAllClaimsFromToken(token).get("typeToken");
     }
 
     /**
@@ -182,4 +174,33 @@ public class JwtUtils {
         return RandomStringUtils.randomAlphanumeric(50);
     }
 
+    /**
+     * Извлекает все claims (полезную нагрузку) из токена.
+     * Этот приватный метод используется для оптимизации, чтобы избежать многократного парсинга токена.
+     *
+     * @param token JWT токен.
+     * @return Объект {@link Claims}.
+     */
+    private Claims getAllClaimsFromToken(String token) {
+        // В новых версиях библиотеки jjwt парсинг с истекшим сроком действия вызывает ExpiredJwtException.
+        // Чтобы получить claims из истекшего токена (для процесса обновления),
+        // нужно перехватить исключение и извлечь claims из него.
+        try {
+            return Jwts.parser()
+                    .setSigningKey(getSigningKey())
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims();
+        }
+    }
+
+    /**
+     * Создает и возвращает ключ для подписи JWT.
+     *
+     * @return Объект {@link Key}.
+     */
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
 }
