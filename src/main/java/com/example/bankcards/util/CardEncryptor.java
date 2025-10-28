@@ -12,12 +12,13 @@ import java.util.Base64;
 @Component
 public class CardEncryptor {
 
-    private static final String ALGORITHM = "AES";
     /**
      * Алгоритм шифрования, режим и дополнение.
      * ECB не рекомендуется для больших объемов данных, но подходит для отдельных
      * блоков фиксированного размера, таких как номер карты.
      */
+    private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
+    private static final String ALGORITHM_NAME = "AES";
 
     private final VaultService vaultService;
 
