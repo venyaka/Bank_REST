@@ -24,42 +24,25 @@ public class MailServiceImpl implements MailService {
 
     private final JavaMailSender mailSender;
 
-//    @Value("${link.to-verify-user}")
-//    private String linkToVerify;
-//
-//    @Value("${link.to-change-password}")
-//    private String linkToRestorePassword;
-
     @Value("${sender.mail}")
     private String fromMail;
 
     @Value("${sender.token-replace}")
     private String tokenReplace;
+
     @Value("${sender.email-replace}")
     private String emailReplaceString;
+
+    private static final Logger logger = LoggerFactory.getLogger(MailServiceImpl.class);
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void sendUserVerificationMail(User user, HttpServletRequest request) {
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
-        String content = MailUtils.ACCOUNT_VERIFY_TEMPLATE;
-        String link = UrlPathUtility.getSiteUrl(request) + "/api/authorize/verification?email=@EMAIL@&token=@TOKEN@";
-        link = link.replace(tokenReplace, user.getToken());
-        link = link.replace(emailReplaceString, user.getEmail());
-        content = content.replace(MailUtils.LINK, link);
-        try {
-            helper.setText(content, true);
-            helper.setTo(user.getEmail());
-            helper.setSubject(MailUtils.ACCOUNT_VERIFY_HEADER);
-            helper.setFrom(fromMail);
-            mailSender.send(mimeMessage);
-
-        } catch (MessagingException e) {
-            throw new RuntimeException(e);
-        }
+        String link = UrlPathUtility.getSiteUrl(request) + "/api/authorize/verification?email=" + user.getEmail() + "&token=" + user.getToken();
+        String content = MailUtils.ACCOUNT_VERIFY_TEMPLATE.replace(MailUtils.LINK, link);
+        sendEmail(user.getEmail(), MailUtils.ACCOUNT_VERIFY_HEADER, content);
     }
 
     /**
@@ -67,14 +50,11 @@ public class MailServiceImpl implements MailService {
      */
     @Override
     public void sendPasswordRestoreMail(User user, HttpServletRequest request) {
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
-        String content = MailUtils.CHANGE_PASSWORD_TEMPLATE;
-        String link = UrlPathUtility.getSiteUrl(request) + "/recovery?email=@EMAIL@&token=@TOKEN@";
-        link = link.replace(tokenReplace, user.getToken());
-        link = link.replace(emailReplaceString, user.getEmail());
-        content = content.replace(MailUtils.LINK, link);
-        try {
+        String link = UrlPathUtility.getSiteUrl(request) + "/recovery?email=" + user.getEmail() + "&token=" + user.getToken();
+        String content = MailUtils.CHANGE_PASSWORD_TEMPLATE.replace(MailUtils.LINK, link);
+        sendEmail(user.getEmail(), MailUtils.ACCOUNT_CHANGE_PASSWORD_HEADER, content);
+    }
+
     /**
      * Вспомогательный метод для отправки email.
      *
@@ -82,16 +62,22 @@ public class MailServiceImpl implements MailService {
      * @param subject Тема письма.
      * @param content Содержимое письма (HTML).
      */
+    private void sendEmail(String to, String subject, String content) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
             helper.setText(content, true);
-            helper.setTo(user.getEmail());
-            helper.setSubject(MailUtils.ACCOUNT_CHANGE_PASSWORD_HEADER);
+            helper.setTo(to);
+            helper.setSubject(subject);
             helper.setFrom(fromMail);
             mailSender.send(mimeMessage);
-
+            logger.info("Email sent to {}", to);
         } catch (MessagingException e) {
-            throw new RuntimeException(e);
+            logger.error("Failed to send email to {}", to, e);
+            // В реальном приложении здесь может быть более сложная логика обработки,
+            // например, повторная отправка или уведомление администратора.
+            throw new RuntimeException("Failed to send email", e);
         }
     }
-
 
 }
