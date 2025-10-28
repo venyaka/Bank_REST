@@ -114,7 +114,7 @@ public class AuthorizeServiceImpl implements AuthorizeService {
             throw new BadRequestException(BadRequestError.USER_ALREADY_VERIFICATED);
         }
 
-        if (null == user.getToken() || !user.getToken().equals(verificationToken)) {
+        if (user.getToken() == null || !user.getToken().equals(verificationToken)) {
             throw new BadRequestException(BadRequestError.NOT_CORRECT_VERIFICATION_CODE);
         }
 

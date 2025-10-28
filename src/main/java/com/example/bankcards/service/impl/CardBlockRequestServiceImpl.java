@@ -124,9 +124,12 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
         return dto;
     }
 
-    private String maskCardNumber(String encryptedCardNumber) {
-        if (encryptedCardNumber == null || encryptedCardNumber.length() < 4) return "****";
-        String last4 = encryptedCardNumber.substring(encryptedCardNumber.length() - 4);
+    /**
+     * Маскирует номер карты.
+     *
+     * @param cardNumber Расшифрованный номер карты.
+     * @return Маскированный номер.
+     */
     private String maskCardNumber(String cardNumber) {
         if (cardNumber == null || cardNumber.length() < 4) return "****";
         String last4 = cardNumber.substring(cardNumber.length() - 4);
