@@ -33,4 +33,5 @@ build/
 .vscode/
 
 ### Environment ###
-*.env
+*.envmvnw
+mvnw.cmd
