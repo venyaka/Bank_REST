@@ -13,6 +13,8 @@ public interface UserSessionRepository extends JpaRepository<UserSession, Long> 
 
     List<UserSession> findByUserAndEndTime(User user, LocalDateTime localDateTime);
 
+    List<UserSession> findByUserAndEndTimeIsNull(User user);
+
     UserSession findFirstByUserOrderByStartTimeDesc(User user);
 
 }
