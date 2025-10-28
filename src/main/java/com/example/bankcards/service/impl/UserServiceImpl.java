@@ -3,6 +3,8 @@ package com.example.bankcards.service.impl;
 
 import com.example.bankcards.dto.request.CreateUserReqDTO;
 import com.example.bankcards.dto.request.UpdateUserReqDTO;
+import com.example.bankcards.exception.BadRequestException;
+import com.example.bankcards.exception.errors.BadRequestError;
 import com.example.bankcards.security.jwt.JwtUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +39,6 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
 
     /**
@@ -143,11 +144,15 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserRespDTO createUser(CreateUserReqDTO createUserReqDTO) {
+        if (userRepository.findByEmail(createUserReqDTO.getEmail()).isPresent()) {
+            throw new BadRequestException(BadRequestError.USER_ALREADY_EXISTS);
+        }
         User user = new User();
         user.setEmail(createUserReqDTO.getEmail());
         user.setFirstName(createUserReqDTO.getFirstName());
         user.setLastName(createUserReqDTO.getLastName());
         user.setPassword(passwordEncoder.encode(createUserReqDTO.getPassword()));
+
         user.setIsEmailVerificated(Boolean.FALSE);
         user.setRoles(Set.of(Role.USER));
 
