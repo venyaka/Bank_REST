@@ -20,6 +20,12 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Optional;
 
+/**
+ * Утилитарный класс для работы с JWT (JSON Web Tokens).
+ * <p>
+ * Отвечает за генерацию, валидацию и извлечение данных из access и refresh токенов.
+ * </p>
+ */
 @Component
 @RequiredArgsConstructor
 public class JwtUtils {
@@ -35,6 +41,12 @@ public class JwtUtils {
 
     private final UserRepository userRepository;
 
+    /**
+     * Генерирует access-токен для указанного пользователя.
+     *
+     * @param user Пользователь, для которого создается токен.
+     * @return Строка с access-токеном.
+     */
     public String generateToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getEmail());
         Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -49,6 +61,13 @@ public class JwtUtils {
 
     }
 
+    /**
+     * Генерирует refresh-токен для указанного пользователя.
+     * Включает в себя уникальную последовательность из поля {@code user.refreshToken}.
+     *
+     * @param user Пользователь, для которого создается токен.
+     * @return Строка с refresh-токеном.
+     */
     public String generateRefreshToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getEmail());
         claims.put("refreshToken", user.getRefreshToken());
@@ -64,6 +83,20 @@ public class JwtUtils {
 
     }
 
+    /**
+     * Проверяет валидность refresh-токена.
+     * <p>
+     * Проверка включает:
+     * 1. Стандартную валидацию JWT (подпись, срок действия).
+     * 2. Проверку существования пользователя с таким email.
+     * 3. Сравнение уникальной последовательности из токена с той, что хранится в БД.
+     * Это защищает от использования старых refresh-токенов после их ротации.
+     * </p>
+     *
+     * @param token Refresh-токен для проверки.
+     * @return {@code true}, если токен полностью валиден.
+     * @throws BadRequestException если токен не прошел проверку.
+     */
     public boolean validateRefreshToken(String token) {
         try {
             validateToken(token);
@@ -82,7 +115,13 @@ public class JwtUtils {
 
     }
 
-
+    /**
+     * Проверяет JWT токен на валидность (подпись, срок действия).
+     *
+     * @param token Токен для проверки.
+     * @return {@code true}, если токен валиден.
+     * @throws AuthorizeException если токен некорректен или истек.
+     */
     public boolean validateToken(String token) {
         try {
             Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -96,6 +135,12 @@ public class JwtUtils {
         }
     }
 
+    /**
+     * Извлекает email пользователя (subject) из токена.
+     *
+     * @param token JWT токен.
+     * @return Email пользователя.
+     */
     public String getUserEmailFromToken(String token) {
         Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
@@ -103,18 +148,36 @@ public class JwtUtils {
 
     }
 
+    /**
+     * Извлекает уникальную последовательность refresh-токена из его payload.
+     *
+     * @param token JWT refresh-токен.
+     * @return Уникальная строка.
+     */
     public String getRefreshStringFromToken(String token) {
         Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
         return (String) claims.get("refreshToken");
     }
 
+    /**
+     * Извлекает тип токена (access/refresh) из его payload.
+     *
+     * @param token JWT токен.
+     * @return Тип токена.
+     */
     public String getTypeTokenFromToken(String token) {
         Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
         return (String) claims.get("typeToken");
     }
 
+    /**
+     * Генерирует случайную алфавитно-цифровую последовательность.
+     * Используется для создания уникального идентификатора refresh-токена.
+     *
+     * @return Случайная строка.
+     */
     public String generateRandomSequence() {
         return RandomStringUtils.randomAlphanumeric(50);
     }

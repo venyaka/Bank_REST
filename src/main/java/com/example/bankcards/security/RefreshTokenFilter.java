@@ -16,6 +16,18 @@ import com.example.bankcards.repository.UserRepository;
 
 import java.io.IOException;
 
+/**
+ * Фильтр, отвечающий за обновление (ротацию) JWT токенов.
+ * <p>
+ * Этот фильтр активируется только для эндпоинта {@code /authorize/refreshToken}.
+ * Его задача — принять refresh-токен из заголовка "Refresh", проверить его валидность,
+ * сгенерировать новую пару access и refresh токенов и вернуть их в заголовках ответа.
+ * </p>
+ * <p>
+ * Процесс ротации включает в себя обновление уникальной последовательности в refresh-токене,
+ * что делает предыдущий refresh-токен недействительным и повышает безопасность.
+ * </p>
+ */
 @Component
 @RequiredArgsConstructor
 public class RefreshTokenFilter extends OncePerRequestFilter {
@@ -24,6 +36,9 @@ public class RefreshTokenFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
+    /**
+     * Основной метод фильтра для обработки запроса на обновление токена.
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         if (request.getHeader("Refresh") != null) {
@@ -48,6 +63,10 @@ public class RefreshTokenFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * Определяет, должен ли фильтр применяться к текущему запросу.
+     * Фильтр активен только для эндпоинта обновления токена.
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         return !request.getRequestURI().equals(PathConstants.AUTHORIZE_CONTROLLER_PATH + "/refreshToken");

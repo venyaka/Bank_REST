@@ -20,6 +20,18 @@ import com.example.bankcards.service.UserService;
 import java.io.IOException;
 import java.util.Arrays;
 
+/**
+ * Фильтр для обработки JWT токенов при каждом запросе.
+ * <p>
+ * Этот фильтр проверяет наличие access-токена в cookie. Если токен валиден,
+ * он устанавливает аутентификацию в {@link SecurityContextHolder}.
+ * <p>
+ * Если access-токен истек, фильтр пытается обновить его с помощью refresh-токена,
+ * также хранящегося в cookie. В случае успешного обновления, выпускается новая пара
+ * токенов (access и refresh), и они устанавливаются в cookie ответа. Этот процесс
+ * называется ротацией токенов.
+ * </p>
+ */
 @Component
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
@@ -28,6 +40,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
 
+    /**
+     * Основной метод фильтра, выполняющий проверку и обновление токенов.
+     */
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String accessToken = getCookieValue(request, "accessToken");
@@ -68,6 +83,13 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * Извлекает значение cookie по имени.
+     *
+     * @param request HTTP-запрос.
+     * @param name    Имя cookie.
+     * @return Значение cookie или null, если cookie не найдено.
+     */
     private String getCookieValue(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) return null;
@@ -77,6 +99,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 .findFirst().orElse(null);
     }
 
+    /**
+     * Добавляет в ответ безопасный HttpOnly cookie.
+     *
+     * @param response      HTTP-ответ.
+     * @param name          Имя cookie.
+     * @param value         Значение cookie.
+     * @param maxAgeSeconds Время жизни cookie в секундах.
+     */
     private void addHttpOnlyCookie(HttpServletResponse response, String name, String value, int maxAgeSeconds) {
         StringBuilder sb = new StringBuilder();
         sb.append(name).append("=").append(value).append(";")
@@ -87,6 +117,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         response.addHeader("Set-Cookie", sb.toString());
     }
 
+    /**
+     * Определяет, должен ли фильтр применяться к текущему запросу.
+     * Фильтр не применяется к эндпоинтам авторизации и статическим ресурсам.
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
