@@ -6,4 +6,7 @@ public class IpAddressesConstant {
 
     public static final String ACCESS_KEY_GET_PARAMETER = "?access_key=";
 
+    private IpAddressesConstant() {
+        // Утилитарный класс, не предназначен для инстанцирования
+    }
 }

@@ -2,6 +2,9 @@ package com.example.bankcards.util;
 
 public class MailUtils {
 
+    private MailUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
     public static final String ACCOUNT_VERIFY_HEADER = "Верификация аккаунта BankCards";
 
     public static final String ACCOUNT_CHANGE_PASSWORD_HEADER = "Изменение пароля аккаунта Shop";
