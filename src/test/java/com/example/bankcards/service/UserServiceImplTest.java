@@ -129,8 +129,10 @@ class UserServiceImplTest {
 
     @Test
     void deleteUser_success() {
+        when(userRepository.existsById(1L)).thenReturn(true);
         doNothing().when(userRepository).deleteById(1L);
         assertDoesNotThrow(() -> userService.deleteUser(1L));
+        verify(userRepository, times(1)).deleteById(1L);
     }
 }
 
