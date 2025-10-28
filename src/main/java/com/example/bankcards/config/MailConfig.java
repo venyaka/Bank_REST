@@ -9,6 +9,9 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import java.util.Properties;
 
+/**
+ * Конфигурационный класс для настройки отправки электронной почты.
+ */
 @Configuration
 @Slf4j
 public class MailConfig {
@@ -24,6 +27,11 @@ public class MailConfig {
 
     @Value("${sender.smtp.port}")
     private Integer port;
+
+    /**
+     * Создает и настраивает бин JavaMailSender для отправки электронных писем.
+     * @return настроенный экземпляр JavaMailSender.
+     */
     @Bean
     public JavaMailSender getJavaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();

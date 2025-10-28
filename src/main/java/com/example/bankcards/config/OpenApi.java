@@ -7,9 +7,17 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Конфигурационный класс для настройки OpenAPI (Swagger).
+ */
 @Configuration
 public class OpenApi {
 
+    /**
+     * Создает и настраивает бин OpenAPI для документирования API.
+     * Этот метод настраивает схему безопасности "bearerAuth" для аутентификации с помощью JWT.
+     * @return настроенный экземпляр OpenAPI.
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         final String securitySchemeName = "bearerAuth";

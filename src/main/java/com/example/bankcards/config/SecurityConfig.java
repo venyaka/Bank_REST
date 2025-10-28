@@ -19,6 +19,11 @@ import com.example.bankcards.security.jwt.JwtTokenFilter;
 
 import java.util.Arrays;
 
+/**
+ * Конфигурационный класс для настройки безопасности веб-приложения.
+ * Этот класс настраивает CORS, цепочку фильтров безопасности, включая обработку JWT,
+ * и определяет правила авторизации для различных эндпоинтов.
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -29,6 +34,11 @@ public class SecurityConfig {
 
     private final ExceptionHandlerFilter exceptionHandlerFilter;
 
+    /**
+     * Создает и настраивает бин CorsConfigurationSource для обработки CORS-запросов.
+     * Разрешает определенные HTTP-методы и применяет стандартные значения для всех путей.
+     * @return настроенный экземпляр CorsConfigurationSource.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -39,6 +49,15 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * Создает и настраивает цепочку фильтров безопасности.
+     * Этот метод определяет правила доступа к различным эндпоинтам, настраивает
+     * управление сессиями, добавляет кастомные фильтры для обработки исключений и JWT,
+     * а также отключает CSRF-защиту.
+     * @param httpSecurity объект HttpSecurity для настройки безопасности.
+     * @return настроенный экземпляр SecurityFilterChain.
+     * @throws Exception если при настройке возникает ошибка.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
