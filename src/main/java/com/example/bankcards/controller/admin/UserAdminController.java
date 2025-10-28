@@ -6,6 +6,7 @@ import com.example.bankcards.dto.request.UpdateUserReqDTO;
 import com.example.bankcards.dto.response.UserRespDTO;
 import com.example.bankcards.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +17,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(PathConstants.USER_ADMIN_CONTROLLER_PATH)
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('ADMIN')")
 public class UserAdminController {
 
     private final UserService userService;
@@ -29,13 +30,13 @@ public class UserAdminController {
 
     @PostMapping
     @Operation(summary = "Создать пользователя (только для администратора)")
-    public ResponseEntity<UserRespDTO> createUser(@RequestBody CreateUserReqDTO createUserReqDTO) {
+    public ResponseEntity<UserRespDTO> createUser(@Valid @RequestBody CreateUserReqDTO createUserReqDTO) {
         return ResponseEntity.ok(userService.createUser(createUserReqDTO));
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Обновить пользователя (только для администратора)")
-    public ResponseEntity<UserRespDTO> updateUser(@PathVariable Long id, @RequestBody UpdateUserReqDTO updateUserReqDTO) {
+    public ResponseEntity<UserRespDTO> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserReqDTO updateUserReqDTO) {
         return ResponseEntity.ok(userService.updateUser(id, updateUserReqDTO));
     }
 

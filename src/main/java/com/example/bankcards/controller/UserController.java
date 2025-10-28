@@ -3,12 +3,11 @@ package com.example.bankcards.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.bankcards.constant.PathConstants;
 import com.example.bankcards.dto.request.UpdateCurrentUserReqDTO;
 import com.example.bankcards.dto.response.UserRespDTO;
-import com.example.bankcards.service.impl.CookieServiceImpl;
+import com.example.bankcards.service.CookieService;
 import com.example.bankcards.service.UserService;
 
 import java.io.IOException;
@@ -19,7 +18,7 @@ import java.io.IOException;
 public class UserController {
 
     private final UserService userService;
-    private final CookieServiceImpl cookieService;
+    private final CookieService cookieService;
 
     @GetMapping("/info")
     @Operation(summary = "Получение информации о текущем авторизированном пользователе")

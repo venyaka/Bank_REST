@@ -10,6 +10,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.exception.errors.NotFoundError;
 
 import java.util.List;
 
@@ -34,21 +37,25 @@ public class AdminCardBlockRequestController {
 
     @PostMapping("/{requestId}/approve")
     @Operation(summary = "Подтвердить запрос на блокировку карты (карта будет заблокирована)")
-    public CardBlockRequestRespDTO approveBlockRequest(@PathVariable Long requestId, @RequestParam String comment) {
+    public ResponseEntity<CardBlockRequestRespDTO> approveBlockRequest(@PathVariable Long requestId,
+                                                                        @RequestParam(required = false) String comment) {
         User admin = getCurrentUser();
-        return blockRequestService.approveBlockRequest(requestId, admin, comment);
+        CardBlockRequestRespDTO resp = blockRequestService.approveBlockRequest(requestId, admin, comment);
+        return ResponseEntity.ok(resp);
     }
 
     @PostMapping("/{requestId}/reject")
     @Operation(summary = "Отклонить запрос на блокировку карты")
-    public CardBlockRequestRespDTO rejectBlockRequest(@PathVariable Long requestId, @RequestParam String comment) {
+    public ResponseEntity<CardBlockRequestRespDTO> rejectBlockRequest(@PathVariable Long requestId,
+                                                                       @RequestParam(required = false) String comment) {
         User admin = getCurrentUser();
-        return blockRequestService.rejectBlockRequest(requestId, admin, comment);
+        CardBlockRequestRespDTO resp = blockRequestService.rejectBlockRequest(requestId, admin, comment);
+        return ResponseEntity.ok(resp);
     }
 
     private User getCurrentUser() {
         String email = userService.getCurrentUserInfo().getEmail();
-        return userRepository.findByEmail(email).orElseThrow();
+        return userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
     }
 }
 

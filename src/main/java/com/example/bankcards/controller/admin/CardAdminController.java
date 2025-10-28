@@ -37,7 +37,7 @@ public class CardAdminController {
 
     @PostMapping()
     @Operation(summary = "Создать новую карту")
-    public CardRespDTO createCard(@RequestBody CreateCardReqDTO createCardReqDTO) {
+    public CardRespDTO createCard(@Valid @RequestBody CreateCardReqDTO createCardReqDTO) {
         return cardService.createCard(createCardReqDTO);
     }
 

@@ -9,6 +9,8 @@ import com.example.bankcards.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.exception.errors.NotFoundError;
 
 import java.util.List;
 
@@ -40,7 +42,7 @@ public class CardBlockRequestController {
 
     private User getCurrentUser() {
         String email = userService.getCurrentUserInfo().getEmail();
-        return userRepository.findByEmail(email).orElseThrow();
+        return userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
     }
 }
 

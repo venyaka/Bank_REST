@@ -42,8 +42,7 @@ public class AuthorizeController {
     @RequestMapping(value = "/verification", method = { RequestMethod.GET, RequestMethod.POST })
     @Operation(summary = "Верификация зарегистрированного пользователя по почте и токену")
     public void verificateUser(@RequestParam String email,
-                               @RequestParam(name = "token") String token,
-                               HttpServletRequest request) {
+                               @RequestParam(name = "token") String token) {
         authorizeService.verificateUser(email, token);
     }
 }
