@@ -1,6 +1,6 @@
 package com.example.bankcards.dto.response;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.util.Set;
@@ -10,6 +10,7 @@ import java.util.Set;
 public class UserRespDTO {
 
     @NotBlank
+    @NotNull
     private Long id;
 
     private String email;
