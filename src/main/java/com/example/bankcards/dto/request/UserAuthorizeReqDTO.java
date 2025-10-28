@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 public class UserAuthorizeReqDTO {
 
+    @NotBlank(message = "Email is required")
     @Email
     private String email;
 
