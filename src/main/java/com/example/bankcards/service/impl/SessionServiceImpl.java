@@ -29,45 +29,41 @@ import java.util.List;
 public class SessionServiceImpl implements SessionService {
 
     private final UserRepository userRepository;
-
     private final UserSessionRepository userSessionRepository;
-
-    private final RestTemplateConfig restTemplateConfig;
+    private final RestTemplate restTemplate; // Используем один бин RestTemplate
 
     @Value("${ipstack.access.key}")
     private String accessKey;
 
-
     /**
      * {@inheritDoc}
      */
+    @Override
     @Transactional
     public UserSession saveNewSession(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
 
-        endOldSessions(userId);
+        // Завершаем старые сессии перед созданием новой
+        endOldSessions(user);
 
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        HttpServletRequest request = getRequest();
         String uAgent = request.getHeader("User-Agent");
         UserAgent userAgent = UserAgent.parseUserAgentString(uAgent);
         OperatingSystem os = userAgent.getOperatingSystem();
-        String ip = request.getRemoteAddr();
-        String cityName = this.getCityFromIp(ip);
-        if (cityName == null) {
-            cityName = "";
-        }
+        String ip = getClientIp(request);
+        String cityName = getCityFromIp(ip);
 
         UserSession userSession = new UserSession();
         userSession.setUser(user);
         userSession.setIpAddress(ip);
-        userSession.setCity(cityName);
+        userSession.setCity(cityName != null ? cityName : "Unknown");
         userSession.setUserAgent(uAgent);
         userSession.setOsName(os.getName());
         userSession.setDeviceType(os.getDeviceType().getName());
         userSession.setStartTime(LocalDateTime.now());
-        userSession = userSessionRepository.save(userSession);
-        return userSession;
+
+        return userSessionRepository.save(userSession);
     }
 
     /**
@@ -76,15 +72,14 @@ public class SessionServiceImpl implements SessionService {
      * @param user Пользователь, чьи сессии нужно завершить.
      */
     @Transactional
-    public void endOldSessions(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
-
-        List<UserSession> userSessions = userSessionRepository.findByUserAndEndTime(user, null);
-        LocalDateTime now = LocalDateTime.now();
-        for (UserSession session : userSessions) {
-            session.setEndTime(now);
-            userSessionRepository.save(session);
+    public void endOldSessions(User user) {
+        List<UserSession> activeSessions = userSessionRepository.findByUserAndEndTimeIsNull(user);
+        if (!activeSessions.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            for (UserSession session : activeSessions) {
+                session.setEndTime(now);
+            }
+            userSessionRepository.saveAll(activeSessions);
         }
     }
 
@@ -95,8 +90,47 @@ public class SessionServiceImpl implements SessionService {
      * @return Название города или null в случае ошибки.
      */
     private String getCityFromIp(String ip) {
-        String url = IpAddressesConstant.API_IPSTACK_URL + ip + IpAddressesConstant.ACCESS_KEY_GET_PARAMETER + accessKey;
-        RestTemplate restTemplate = restTemplateConfig.getRestTemplate();
-        return restTemplate.getForObject(url, IpStackResponse.class).getCity();
+        // Не делаем запрос для локальных/тестовых IP
+        if (ip == null || ip.equals("127.0.0.1") || ip.equals("0:0:0:0:0:0:0:1")) {
+            return "Local";
+        }
+        String url = IpAddressesConstant.API_IPSTACK_URL + ip + "?access_key=" + accessKey;
+        try {
+            IpStackResponse response = restTemplate.getForObject(url, IpStackResponse.class);
+            if (response != null && response.getCity() != null) {
+                return response.getCity();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Получает текущий HttpServletRequest.
+     *
+     * @return HttpServletRequest.
+     * @throws IllegalStateException если запрос недоступен.
+     */
+    private HttpServletRequest getRequest() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            throw new IllegalStateException("Could not find current HttpServletRequest");
+        }
+        return attributes.getRequest();
+    }
+
+    /**
+     * Получает IP-адрес клиента, учитывая прокси.
+     *
+     * @param request HttpServletRequest.
+     * @return IP-адрес клиента.
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader == null || xfHeader.isEmpty() || "unknown".equalsIgnoreCase(xfHeader)) {
+            return request.getRemoteAddr();
+        }
+        return xfHeader.split(",")[0];
     }
 }
