@@ -5,9 +5,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
+/**
+ * Реализация сервиса для работы с cookie.
+ */
 @Service
 public class CookieServiceImpl implements CookieService {
 
+    /**
+     * {@inheritDoc}
+     */
     public void addAuthCookies(HttpServletResponse response, String accessToken, String refreshToken) {
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .httpOnly(true)
@@ -25,6 +31,9 @@ public class CookieServiceImpl implements CookieService {
         response.addHeader("Set-Cookie", refreshCookie.toString());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void clearAuthCookies(HttpServletResponse response) {
         ResponseCookie access = ResponseCookie.from("accessToken", "")
                 .httpOnly(true)

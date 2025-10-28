@@ -20,19 +20,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация сервиса для управления запросами на блокировку карт.
+ */
 @Service
 @RequiredArgsConstructor
 public class CardBlockRequestServiceImpl implements CardBlockRequestService {
 
     private final CardBlockRequestRepository blockRequestRepository;
-
     private final CardRepository cardRepository;
-
     private final CardService cardService;
-
     private final CardEncryptor cardEncryptor;
 
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CardBlockRequestRespDTO createBlockRequest(Long cardId, User user) {
         Card card = cardRepository.findById(cardId)
@@ -55,6 +57,9 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
         return toDto(request);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<CardBlockRequestRespDTO> getUserBlockRequests(User user) {
         return blockRequestRepository.findByUser(user).stream()
@@ -62,6 +67,9 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<CardBlockRequestRespDTO> getAllBlockRequests() {
         return blockRequestRepository.findAll().stream()
@@ -69,6 +77,9 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CardBlockRequestRespDTO approveBlockRequest(Long requestId, User admin, String comment) {
         CardBlockRequest request = blockRequestRepository.findById(requestId)
@@ -90,6 +101,9 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
         return toDto(request);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CardBlockRequestRespDTO rejectBlockRequest(Long requestId, User admin, String comment) {
         CardBlockRequest request = blockRequestRepository.findById(requestId)
@@ -108,6 +122,12 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
         return toDto(request);
     }
 
+    /**
+     * Конвертирует сущность CardBlockRequest в DTO.
+     *
+     * @param request Сущность для конвертации.
+     * @return DTO с данными запроса.
+     */
     private CardBlockRequestRespDTO toDto(CardBlockRequest request) {
         CardBlockRequestRespDTO dto = new CardBlockRequestRespDTO();
         dto.setId(request.getId());
@@ -136,6 +156,12 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
         return "**** **** **** " + last4;
     }
 
+    /**
+     * Расшифровывает номер карты.
+     *
+     * @param encryptedCardNumber Зашифрованный номер.
+     * @return Расшифрованный номер.
+     */
     private String decryptCardNumber(String encryptedCardNumber) {
         return cardEncryptor.decrypt(encryptedCardNumber);
     }

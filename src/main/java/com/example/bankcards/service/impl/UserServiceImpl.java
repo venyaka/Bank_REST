@@ -29,6 +29,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация сервиса для управления пользователями.
+ */
 @RequiredArgsConstructor
 @Service
 public class UserServiceImpl implements UserService {
@@ -37,8 +40,9 @@ public class UserServiceImpl implements UserService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final JwtUtils jwtUtils;
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository
@@ -46,6 +50,9 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public UserRespDTO getCurrentUserInfo() {
@@ -53,6 +60,9 @@ public class UserServiceImpl implements UserService {
         return getResponseDTO(user);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public UserRespDTO updateCurrentUser(UpdateCurrentUserReqDTO updateCurrentUserReqDTO) {
@@ -69,7 +79,9 @@ public class UserServiceImpl implements UserService {
         return getResponseDTO(user);
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public UserRespDTO getUserById(Long id) {
@@ -78,7 +90,9 @@ public class UserServiceImpl implements UserService {
         return getResponseDTO(user);
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
     @Transactional
     @Override
     public UserRespDTO getUserByEmail(String email) {
@@ -87,6 +101,9 @@ public class UserServiceImpl implements UserService {
         return getResponseDTO(user);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UserRespDTO getResponseDTO(User user) {
         UserRespDTO userRespDTO = new UserRespDTO();
@@ -99,6 +116,9 @@ public class UserServiceImpl implements UserService {
         return userRespDTO;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void logout() {
@@ -108,6 +128,9 @@ public class UserServiceImpl implements UserService {
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<UserRespDTO> getAllUsers() {
         return userRepository.findAll().stream()
@@ -115,6 +138,9 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UserRespDTO createUser(CreateUserReqDTO createUserReqDTO) {
         User user = new User();
@@ -129,6 +155,9 @@ public class UserServiceImpl implements UserService {
         return getResponseDTO(saved);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UserRespDTO updateUser(Long id, UpdateUserReqDTO updateUserReqDTO) {
         User existing = userRepository.findById(id)
@@ -142,6 +171,9 @@ public class UserServiceImpl implements UserService {
         return getResponseDTO(updated);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
@@ -150,6 +182,13 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
     }
 
+    /**
+     * Получает текущего аутентифицированного пользователя из SecurityContext.
+     *
+     * @return Сущность {@link User}.
+     * @throws AuthorizeException если пользователь не аутентифицирован.
+     * @throws NotFoundException  если пользователь не найден в базе данных.
+     */
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() instanceof String && authentication.getPrincipal().equals("anonymousUser")) {

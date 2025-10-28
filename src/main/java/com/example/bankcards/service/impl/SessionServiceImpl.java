@@ -38,6 +38,9 @@ public class SessionServiceImpl implements SessionService {
     private String accessKey;
 
 
+    /**
+     * {@inheritDoc}
+     */
     @Transactional
     public UserSession saveNewSession(Long userId) {
         User user = userRepository.findById(userId)
@@ -67,6 +70,11 @@ public class SessionServiceImpl implements SessionService {
         return userSession;
     }
 
+    /**
+     * Завершает все активные сессии для указанного пользователя.
+     *
+     * @param user Пользователь, чьи сессии нужно завершить.
+     */
     @Transactional
     public void endOldSessions(Long userId) {
         User user = userRepository.findById(userId)
@@ -80,6 +88,12 @@ public class SessionServiceImpl implements SessionService {
         }
     }
 
+    /**
+     * Получает город по IP-адресу с помощью сервиса ipstack.
+     *
+     * @param ip IP-адрес.
+     * @return Название города или null в случае ошибки.
+     */
     private String getCityFromIp(String ip) {
         String url = IpAddressesConstant.API_IPSTACK_URL + ip + IpAddressesConstant.ACCESS_KEY_GET_PARAMETER + accessKey;
         RestTemplate restTemplate = restTemplateConfig.getRestTemplate();

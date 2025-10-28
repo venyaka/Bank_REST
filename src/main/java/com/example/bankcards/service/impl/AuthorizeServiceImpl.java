@@ -25,23 +25,26 @@ import com.example.bankcards.service.AuthorizeService;
 
 import java.util.Optional;
 
+import org.springframework.validation.annotation.Validated;
+
+/**
+ * Реализация сервиса для аутентификации и регистрации пользователей.
+ */
 @Service
 @Validated
 @RequiredArgsConstructor
 public class AuthorizeServiceImpl implements AuthorizeService {
 
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
-
     private final MailServiceImpl mailService;
-
     private final SessionServiceImpl sessionService;
-
     private final JwtUtils jwtUtils;
-
     private final CookieServiceImpl cookieService;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<TokenRespDTO> authorizeUser(UserAuthorizeReqDTO userAuthorizeDTO, HttpServletResponse response) {
         String userEmail = userAuthorizeDTO.getEmail();
@@ -56,6 +59,7 @@ public class AuthorizeServiceImpl implements AuthorizeService {
             throw new AuthorizeException(AuthorizedError.NOT_CORRECT_PASSWORD);
         }
         checkUserCanAuthorize(user);
+
         user.setRefreshToken(jwtUtils.generateRandomSequence());
         String jwtToken = jwtUtils.generateToken(user);
         String refreshToken = jwtUtils.generateRefreshToken(user);
@@ -66,12 +70,14 @@ public class AuthorizeServiceImpl implements AuthorizeService {
         tokenDTO.setRefreshToken("Bearer " + refreshToken);
 
         sessionService.saveNewSession(user.getId());
-
         cookieService.addAuthCookies(response, jwtToken, refreshToken);
 
         return ResponseEntity.ok(tokenDTO);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void registerUser(@Valid RegisterReqDTO registerDTO, HttpServletRequest request) {
@@ -88,9 +94,11 @@ public class AuthorizeServiceImpl implements AuthorizeService {
         userRepository.save(user);
 
         mailService.sendUserVerificationMail(user, request);
-
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void sendVerificationCode(String email, HttpServletRequest request) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
@@ -98,9 +106,11 @@ public class AuthorizeServiceImpl implements AuthorizeService {
             throw new BadRequestException(BadRequestError.USER_ALREADY_VERIFICATED);
         }
         mailService.sendUserVerificationMail(user, request);
-
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void verificateUser(String email, String verificationToken) {
@@ -121,16 +131,25 @@ public class AuthorizeServiceImpl implements AuthorizeService {
         user.setToken(null);
         user.setIsEmailVerificated(Boolean.TRUE);
         userRepository.save(user);
-
     }
 
-
+    /**
+     * Проверяет, может ли пользователь авторизоваться.
+     *
+     * @param user Пользователь для проверки.
+     * @throws AuthorizeException если email пользователя не верифицирован.
+     */
     private void checkUserCanAuthorize(User user) {
         if (!user.getIsEmailVerificated()) {
             throw new AuthorizeException(AuthorizedError.USER_NOT_VERIFY);
         }
     }
 
+    /**
+     * Генерирует случайный токен для валидации.
+     *
+     * @return Сгенерированный токен.
+     */
     private String generateValidatingToken() {
         return RandomStringUtils.randomAlphanumeric(50);
     }

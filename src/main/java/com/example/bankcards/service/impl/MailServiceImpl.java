@@ -15,6 +15,9 @@ import com.example.bankcards.service.MailService;
 import com.example.bankcards.util.MailUtils;
 import com.example.bankcards.util.UrlPathUtility;
 
+/**
+ * Реализация сервиса для отправки электронных писем.
+ */
 @Service
 @RequiredArgsConstructor
 public class MailServiceImpl implements MailService {
@@ -35,6 +38,9 @@ public class MailServiceImpl implements MailService {
     @Value("${sender.email-replace}")
     private String emailReplaceString;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void sendUserVerificationMail(User user, HttpServletRequest request) {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -56,6 +62,9 @@ public class MailServiceImpl implements MailService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void sendPasswordRestoreMail(User user, HttpServletRequest request) {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -66,6 +75,13 @@ public class MailServiceImpl implements MailService {
         link = link.replace(emailReplaceString, user.getEmail());
         content = content.replace(MailUtils.LINK, link);
         try {
+    /**
+     * Вспомогательный метод для отправки email.
+     *
+     * @param to      Email получателя.
+     * @param subject Тема письма.
+     * @param content Содержимое письма (HTML).
+     */
             helper.setText(content, true);
             helper.setTo(user.getEmail());
             helper.setSubject(MailUtils.ACCOUNT_CHANGE_PASSWORD_HEADER);
