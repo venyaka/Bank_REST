@@ -18,6 +18,7 @@ public enum AuthorizedError {
 
     NOT_CORRECT_TOKEN("Неверный токен доступа");
 
+    private final String message;
 
     private String message;
 

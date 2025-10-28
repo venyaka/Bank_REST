@@ -19,6 +19,7 @@ public enum BadRequestError {
     BLOCK_REQUEST_ALREADY_PROCESSED("Запрос уже обработан.");
 
     private String message;
+    private final String message;
 
     BadRequestError(String message) {
         this.message = message;
