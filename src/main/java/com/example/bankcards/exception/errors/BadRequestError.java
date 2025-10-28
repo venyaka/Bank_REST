@@ -1,5 +1,13 @@
 package com.example.bankcards.exception.errors;
 
+/**
+ * Перечисление, определяющее типы ошибок, связанных с некорректными запросами (Bad Request).
+ * <p>
+ * Каждый элемент перечисления представляет собой конкретную ошибку,
+ * которая может возникнуть из-за неверных данных, предоставленных клиентом,
+ * и содержит соответствующее сообщение для пользователя на русском языке.
+ * </p>
+ */
 public enum BadRequestError {
 
     NOT_CORRECT_PASSWORD("Неверный пароль"),
@@ -18,13 +26,25 @@ public enum BadRequestError {
     BLOCK_REQUEST_ALREADY_EXISTS("Запрос на блокировку этой карты уже создан и ожидает обработки."),
     BLOCK_REQUEST_ALREADY_PROCESSED("Запрос уже обработан.");
 
-    private String message;
+    /**
+     * Сообщение об ошибке, предназначенное для отображения пользователю.
+     */
     private final String message;
 
+    /**
+     * Конструктор для инициализации элемента перечисления с сообщением.
+     *
+     * @param message Сообщение об ошибке.
+     */
     BadRequestError(String message) {
         this.message = message;
     }
 
+    /**
+     * Возвращает сообщение об ошибке.
+     *
+     * @return Строка с текстом ошибки.
+     */
     public String getMessage() {
         return message;
     }
