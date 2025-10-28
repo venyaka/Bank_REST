@@ -2,10 +2,10 @@ package com.example.bankcards.util;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-public class UrlPathUtility {
 /**
  * Утилитарный класс для работы с URL-адресами в HTTP-запросах.
  */
+public final class UrlPathUtility {
 
     /**
      * Приватный конструктор для предотвращения инстанцирования.
