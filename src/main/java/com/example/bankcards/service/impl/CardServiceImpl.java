@@ -18,8 +18,6 @@ import com.example.bankcards.util.CardEncryptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,6 +33,7 @@ public class CardServiceImpl implements CardService {
     private final CardEncryptor cardEncryptor;
 
     private final UserRepository userRepository;
+    private final java.security.SecureRandom secureRandom = new java.security.SecureRandom();
 
     @Override
     public CardRespDTO createCard(CreateCardReqDTO createCardReqDTO) {
@@ -58,7 +57,7 @@ public class CardServiceImpl implements CardService {
     @Override
     public void blockCard(Long cardId, User requester) {
         Card card = getCardEntityById(cardId, requester);
-        if (!isAdminOrOwner(requester, card)) throw new AccessDeniedException(BadRequestError.NO_ACCESS.getMessage());
+        if (!isAdminOrOwner(requester, card)) throw new BadRequestException(BadRequestError.NO_ACCESS);
         card.setStatus(CardStatus.BLOCKED);
         cardRepository.save(card);
     }
@@ -66,7 +65,7 @@ public class CardServiceImpl implements CardService {
     @Override
     public void activateCard(Long cardId, User requester) {
         Card card = getCardEntityById(cardId, requester);
-        if (!isAdminOrOwner(requester, card)) throw new AccessDeniedException(BadRequestError.NO_ACCESS.getMessage());
+        if (!isAdminOrOwner(requester, card)) throw new BadRequestException(BadRequestError.NO_ACCESS);
         card.setStatus(CardStatus.ACTIVE);
         cardRepository.save(card);
     }
@@ -74,7 +73,7 @@ public class CardServiceImpl implements CardService {
     @Override
     public void deleteCard(Long cardId, User requester) {
         Card card = getCardEntityById(cardId, requester);
-        if (!isAdminOrOwner(requester, card)) throw new AccessDeniedException(BadRequestError.NO_ACCESS.getMessage());
+        if (!isAdminOrOwner(requester, card)) throw new BadRequestException(BadRequestError.NO_ACCESS);
         cardRepository.delete(card);
     }
 
@@ -157,6 +156,9 @@ public class CardServiceImpl implements CardService {
     @Override
     public void updateCardBalance(Long cardId, java.math.BigDecimal newBalance, User requester) {
         // ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!
+        if (!requester.getRoles().stream().anyMatch(r -> r.name().equals("ADMIN"))) {
+            throw new BadRequestException(BadRequestError.NO_ACCESS);
+        }
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new NotFoundException(NotFoundError.CARD_NOT_FOUND));
 
@@ -203,9 +205,9 @@ public class CardServiceImpl implements CardService {
 
     private String generateCardNumber() {
         StringBuilder sb = new StringBuilder();
-        sb.append('1');
+        sb.append('1'); // Пример: начинаем с '1'
         for (int i = 0; i < 14; i++) {
-            sb.append((int)(Math.random() * 10));
+            sb.append(secureRandom.nextInt(10));
         }
         String partial = sb.toString();
         int checksum = calculateLuhnChecksum(partial);

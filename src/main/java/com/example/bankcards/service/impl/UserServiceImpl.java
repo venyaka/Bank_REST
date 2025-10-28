@@ -58,13 +58,11 @@ public class UserServiceImpl implements UserService {
     public UserRespDTO updateCurrentUser(UpdateCurrentUserReqDTO updateCurrentUserReqDTO) {
         User user = this.getCurrentUser();
 
-        user = userRepository.save(user);
-
-        if ( updateCurrentUserReqDTO.getFirstName() != null ) {
-            user.setFirstName( updateCurrentUserReqDTO.getFirstName() );
+        if (updateCurrentUserReqDTO.getFirstName() != null && !updateCurrentUserReqDTO.getFirstName().isBlank()) {
+            user.setFirstName(updateCurrentUserReqDTO.getFirstName());
         }
-        if ( updateCurrentUserReqDTO.getLastName() != null ) {
-            user.setLastName( updateCurrentUserReqDTO.getLastName() );
+        if (updateCurrentUserReqDTO.getLastName() != null && !updateCurrentUserReqDTO.getLastName().isBlank()) {
+            user.setLastName(updateCurrentUserReqDTO.getLastName());
         }
         userRepository.save(user);
 
@@ -75,23 +73,18 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserRespDTO getUserById(Long id) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isEmpty()) {
-            throw new NotFoundException(NotFoundError.USER_NOT_FOUND);
-        }
-
-        return getResponseDTO(optionalUser.get());
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
+        return getResponseDTO(user);
     }
 
 
     @Transactional
     @Override
     public UserRespDTO getUserByEmail(String email) {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isEmpty()) {
-            throw new NotFoundException(NotFoundError.USER_NOT_FOUND);
-        }
-        return getResponseDTO(optionalUser.get());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
+        return getResponseDTO(user);
     }
 
     @Override
@@ -130,7 +123,7 @@ public class UserServiceImpl implements UserService {
         user.setLastName(createUserReqDTO.getLastName());
         user.setPassword(passwordEncoder.encode(createUserReqDTO.getPassword()));
         user.setIsEmailVerificated(Boolean.FALSE);
-        user.setToken(generateValidatingToken());
+        user.setRoles(Set.of(Role.USER));
 
         User saved = userRepository.save(user);
         return getResponseDTO(saved);
@@ -142,27 +135,34 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
         existing.setFirstName(updateUserReqDTO.getFirstName());
         existing.setLastName(updateUserReqDTO.getLastName());
-        existing.setRoles(updateUserReqDTO.getRoles());
+        if (updateUserReqDTO.getRoles() != null && !updateUserReqDTO.getRoles().isEmpty()) {
+            existing.setRoles(updateUserReqDTO.getRoles());
+        }
         User updated = userRepository.save(existing);
         return getResponseDTO(updated);
     }
 
     @Override
     public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new NotFoundException(NotFoundError.USER_NOT_FOUND);
+        }
         userRepository.deleteById(id);
     }
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null || "anonymousUser".equals(authentication.getName())) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() instanceof String && authentication.getPrincipal().equals("anonymousUser")) {
             throw new AuthorizeException(AuthorizedError.NOT_CORRECT_TOKEN);
         }
-        String email = authentication.getName();
-        return userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
-    }
-
-    private String generateValidatingToken() {
-        return RandomStringUtils.randomAlphanumeric(50);
+        String email;
+        if (authentication.getPrincipal() instanceof UserDetails) {
+            email = ((UserDetails) authentication.getPrincipal()).getUsername();
+        } else {
+            email = authentication.getName();
+        }
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
     }
 
 }

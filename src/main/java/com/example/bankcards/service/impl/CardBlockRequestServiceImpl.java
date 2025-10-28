@@ -44,7 +44,7 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
         boolean alreadyRequested = blockRequestRepository.findByUser(user).stream()
                 .anyMatch(r -> r.getCard().equals(card) && r.getStatus() == CardBlockRequest.Status.PENDING);
         if (alreadyRequested) {
-            throw new BadRequestException("Запрос на блокировку этой карты уже создан и ожидает обработки.", "BLOCK_REQUEST_ALREADY_EXISTS");
+            throw new BadRequestException(BadRequestError.BLOCK_REQUEST_ALREADY_EXISTS);
         }
         CardBlockRequest request = new CardBlockRequest();
         request.setCard(card);
@@ -72,9 +72,9 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
     @Override
     public CardBlockRequestRespDTO approveBlockRequest(Long requestId, User admin, String comment) {
         CardBlockRequest request = blockRequestRepository.findById(requestId)
-                .orElseThrow(() -> new BadRequestException("Запрос не найден", "BLOCK_REQUEST_NOT_FOUND"));
+                .orElseThrow(() -> new NotFoundException(NotFoundError.BLOCK_REQUEST_NOT_FOUND));
         if (request.getStatus() != CardBlockRequest.Status.PENDING) {
-            throw new BadRequestException("Запрос уже обработан", "BLOCK_REQUEST_ALREADY_PROCESSED");
+            throw new BadRequestException(BadRequestError.BLOCK_REQUEST_ALREADY_EXISTS);
         }
 
         if (admin.getRoles().stream().noneMatch(r -> r.name().equals("ADMIN"))) {
@@ -93,9 +93,9 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
     @Override
     public CardBlockRequestRespDTO rejectBlockRequest(Long requestId, User admin, String comment) {
         CardBlockRequest request = blockRequestRepository.findById(requestId)
-                .orElseThrow(() -> new BadRequestException("Запрос не найден", "BLOCK_REQUEST_NOT_FOUND"));
+                .orElseThrow(() -> new NotFoundException(NotFoundError.BLOCK_REQUEST_NOT_FOUND));
         if (request.getStatus() != CardBlockRequest.Status.PENDING) {
-            throw new BadRequestException("Запрос уже обработан", "BLOCK_REQUEST_ALREADY_PROCESSED");
+            throw new BadRequestException(BadRequestError.BLOCK_REQUEST_ALREADY_PROCESSED);
         }
         if (admin.getRoles().stream().noneMatch(r -> r.name().equals("ADMIN"))) {
             throw new BadRequestException(BadRequestError.NO_ACCESS);
@@ -127,6 +127,9 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
     private String maskCardNumber(String encryptedCardNumber) {
         if (encryptedCardNumber == null || encryptedCardNumber.length() < 4) return "****";
         String last4 = encryptedCardNumber.substring(encryptedCardNumber.length() - 4);
+    private String maskCardNumber(String cardNumber) {
+        if (cardNumber == null || cardNumber.length() < 4) return "****";
+        String last4 = cardNumber.substring(cardNumber.length() - 4);
         return "**** **** **** " + last4;
     }
 
