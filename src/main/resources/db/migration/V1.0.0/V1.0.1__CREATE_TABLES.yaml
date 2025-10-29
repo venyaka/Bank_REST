@@ -2,6 +2,11 @@ databaseChangeLog:
   - changeSet:
       author: Veniamin
       id: create_user_table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: users
       changes:
         - createTable:
             tableName: users
@@ -58,6 +63,11 @@ databaseChangeLog:
   - changeSet:
       author: Veniamin
       id: create_user_roles_table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: user_role
       changes:
         - createTable:
             tableName: user_role
@@ -73,6 +83,11 @@ databaseChangeLog:
   - changeSet:
       author: Veniamin
       id: create_user_session_table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: user_session
       changes:
         - createTable:
             tableName: user_session
@@ -124,6 +139,15 @@ databaseChangeLog:
                   type: TIMESTAMP
                   constraints:
                     nullable: true
+  - changeSet:
+      author: Veniamin
+      id: add_fk_to_user_session
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_user_session_user_id
+      changes:
         - addForeignKeyConstraint:
             baseTableName: user_session
             baseColumnNames: user_id

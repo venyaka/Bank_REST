@@ -2,6 +2,11 @@ databaseChangeLog:
   - changeSet:
       id: create-card-table
       author: Veniamin
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: card
       changes:
         - createTable:
             tableName: card
@@ -38,12 +43,30 @@ databaseChangeLog:
                   type: NUMERIC(19,2)
                   constraints:
                     nullable: false
+  - changeSet:
+      id: add-fk-to-card-table
+      author: Veniamin
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_card_user
+      changes:
         - addForeignKeyConstraint:
             baseTableName: card
             baseColumnNames: owner_id
             referencedTableName: users
             referencedColumnNames: id
             constraintName: fk_card_user
+  - changeSet:
+      id: add-index-to-card-table
+      author: Veniamin
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                indexName: idx_card_owner_id
+      changes:
         - createIndex:
             tableName: card
             columns:
