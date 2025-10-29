@@ -54,6 +54,7 @@ public class CardController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "Получить карту по id")
+    @PreAuthorize("hasRole('ADMIN') or @cardRepository.findById(#id).get().getOwner().getEmail() == authentication.name")
     public CardRespDTO getCard(@PathVariable Long id) {
         User user = getCurrentUser();
         return cardService.getCardById(id, user);
@@ -95,6 +96,7 @@ public class CardController {
      */
     @GetMapping("/{id}/balance")
     @Operation(summary = "Получить баланс карты по id")
+    @PreAuthorize("hasRole('ADMIN') or @cardRepository.findById(#id).get().getOwner().getEmail() == authentication.name")
     public CardBalanceRespDTO getCardBalance(@PathVariable Long id) {
         User user = getCurrentUser();
         return cardService.getCardBalance(id, user);
