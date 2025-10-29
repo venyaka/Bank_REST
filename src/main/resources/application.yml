@@ -47,7 +47,7 @@ jwt:
   secret: ${JWT_SECRET}
   token:
     time-expiration: 1000000000
-    access-expiration-seconds: 90 # 15 минут
+    access-expiration-seconds: 900 # 15 минут
   token-refresh:
     time-expiration: 10000000000000
     refresh-expiration-seconds: 604800 # 7 дней

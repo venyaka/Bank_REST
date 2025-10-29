@@ -53,7 +53,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String accessToken = getCookieValue(request, "accessToken");
-        if (accessToken != null && !accessToken.isBlank()) {
+        String refreshToken = getCookieValue(request, "refreshToken");
+
+        if (accessToken != null) {
             try {
                 // 1. Попытка валидации access-токена
                 jwtUtils.validateToken(accessToken);
@@ -63,19 +65,32 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             } catch (AuthorizeException ex) {
                 // 2. Если access-токен истек, пытаемся его обновить
                 if (AuthorizedError.TOKEN_WAS_EXPIRED.name().equals(ex.getErrorName())) {
-                    String refreshJwt = getCookieValue(request, "refreshToken");
-                    if (refreshJwt != null) {
-                        try {
-                            // 3. Валидация refresh-токена
-                            if (jwtUtils.validateRefreshToken(refreshJwt)) {
-                                String email = jwtUtils.getUserEmailFromToken(refreshJwt);
-                                User user = userRepository.findByEmail(email).orElse(null);
-                                if (user != null) {
-                                    // 4. Ротация токенов: выпуск новой пары access и refresh
-                                    user.setRefreshToken(jwtUtils.generateRandomSequence());
-                                    String newAccess = jwtUtils.generateToken(user);
-                                    String newRefresh = jwtUtils.generateRefreshToken(user);
-                                    userRepository.saveAndFlush(user);
+                    tryRotateTokens(refreshToken, response);
+                }
+            }
+        } else if (refreshToken != null) {
+            // 3. Если access-токена нет, но есть refresh-токен
+            tryRotateTokens(refreshToken, response);
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private void tryRotateTokens(String refreshJwt, HttpServletResponse response) {
+        if (refreshJwt == null) {
+            return;
+        }
+        try {
+            // Валидация refresh-токена
+            if (jwtUtils.validateRefreshToken(refreshJwt)) {
+                String email = jwtUtils.getUserEmailFromToken(refreshJwt);
+                User user = userRepository.findByEmail(email).orElse(null);
+                if (user != null) {
+                    // Ротация токенов: выпуск новой пары access и refresh
+                    user.setRefreshToken(jwtUtils.generateRandomSequence());
+                    String newAccess = jwtUtils.generateToken(user);
+                    String newRefresh = jwtUtils.generateRefreshToken(user);
+                    userRepository.saveAndFlush(user);
 
                     // Установка новых токенов в HttpOnly cookie
                     addHttpOnlyCookie(response, "accessToken", newAccess, accessExpirationSeconds);
@@ -83,8 +98,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(email, null, user.getAuthorities()));
                 }
             }
+        } catch (Exception ignore) {
+            // Игнорируем ошибки при обновлении, чтобы не прерывать запрос.
+            // Пользователь просто останется неаутентифицированным.
         }
-        filterChain.doFilter(request, response);
     }
 
     /**

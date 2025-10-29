@@ -33,7 +33,7 @@ public class CookieServiceImpl implements CookieService {
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
 //                .secure(true) // Передавать только по HTTPS
-                .path("/api/authorize/refresh") // Ограничить путь для refresh-токена
+                .path("/") // Ограничить путь для refresh-токена
                 .sameSite("Strict") // Более строгая политика
                 .maxAge(refreshExpirationSeconds) // 7 дней
                 .build();
@@ -56,7 +56,7 @@ public class CookieServiceImpl implements CookieService {
         ResponseCookie refresh = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
 //                .secure(true)
-                .path("/api/authorize/refresh")
+                .path("/")
                 .maxAge(0)
                 .sameSite("Strict")
                 .build();
