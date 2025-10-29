@@ -2,6 +2,7 @@ package com.example.bankcards.service.impl;
 
 import com.example.bankcards.service.CookieService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,12 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class CookieServiceImpl implements CookieService {
+
+    @Value("${jwt.token.access-expiration-seconds}")
+    private int accessExpirationSeconds;
+
+    @Value("${jwt.token-refresh.refresh-expiration-seconds}")
+    private int refreshExpirationSeconds;
 
     /**
      * {@inheritDoc}
@@ -21,14 +28,14 @@ public class CookieServiceImpl implements CookieService {
 //                .secure(true) // Передавать только по HTTPS
                 .path("/")
                 .sameSite("Strict")
-                .maxAge(15 * 60) // 15 мин
+                .maxAge(accessExpirationSeconds) // 15 мин
                 .build();
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
 //                .secure(true) // Передавать только по HTTPS
                 .path("/api/authorize/refresh") // Ограничить путь для refresh-токена
                 .sameSite("Strict") // Более строгая политика
-                .maxAge(7 * 24 * 60 * 60) // 7 дней
+                .maxAge(refreshExpirationSeconds) // 7 дней
                 .build();
         response.addHeader("Set-Cookie", accessCookie.toString());
         response.addHeader("Set-Cookie", refreshCookie.toString());

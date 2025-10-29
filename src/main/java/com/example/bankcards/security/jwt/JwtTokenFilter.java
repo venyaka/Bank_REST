@@ -12,6 +12,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,12 @@ import java.util.Arrays;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
+
+    @Value("${jwt.token.access-expiration-seconds}")
+    private int accessExpirationSeconds;
+
+    @Value("${jwt.token-refresh.refresh-expiration-seconds}")
+    private int refreshExpirationSeconds;
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
@@ -70,17 +77,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                                     String newRefresh = jwtUtils.generateRefreshToken(user);
                                     userRepository.saveAndFlush(user);
 
-                                    // 5. Установка новых токенов в HttpOnly cookie
-                                    addHttpOnlyCookie(response, "accessToken", newAccess, 15 * 60); // 15 мин
-                                    addHttpOnlyCookie(response, "refreshToken", newRefresh, 7 * 24 * 60 * 60); // 7 дней
-                                    SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(email, null, user.getAuthorities()));
-                                }
-                            }
-                        } catch (Exception ignore) {
-                            // Игнорируем ошибки при обновлении, чтобы не прерывать запрос.
-                            // Пользователь просто останется неаутентифицированным.
-                        }
-                    }
+                    // Установка новых токенов в HttpOnly cookie
+                    addHttpOnlyCookie(response, "accessToken", newAccess, accessExpirationSeconds);
+                    addHttpOnlyCookie(response, "refreshToken", newRefresh, refreshExpirationSeconds);
+                    SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(email, null, user.getAuthorities()));
                 }
             }
         }
