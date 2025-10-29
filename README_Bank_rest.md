@@ -73,25 +73,43 @@ docker-compose --env-file credentials-dev.env up --build
 - OpenAPI спецификация: `src/main/resources/static/docs/openapi.yaml`
 
 ## Основные эндпоинты
-### Авторизация
-- `POST /api/auth/login` — вход (JWT)
-- `POST /api/auth/register` — регистрация
 
-### Карты
-- `GET /api/cards` — список карт (поиск, пагинация)
-- `POST /api/cards` — создать карту
-- `GET /api/cards/{id}` — получить карту
-- `PUT /api/cards/{id}` — обновить карту
-- `DELETE /api/cards/{id}` — удалить карту
-- `POST /api/cards/{id}/block` — запрос блокировки
-- `POST /api/cards/transfer` — перевод между своими картами
+### Аутентификация и Регистрация (`/authorize`)
+- `POST /authorize/login` — Вход в систему, получение JWT токенов.
+- `POST /authorize/register` — Регистрация нового пользователя.
+- `POST /authorize/verificateCode` — Повторная отправка кода верификации.
+- `GET, POST /authorize/verification` — Верификация пользователя по email и токену.
 
-### Пользователи (ADMIN)
-- `GET /api/users` — список пользователей
-- `POST /api/users` — создать пользователя
-- `GET /api/users/{id}` — получить пользователя
-- `PUT /api/users/{id}` — обновить пользователя
-- `DELETE /api/users/{id}` — удалить пользователя
+### Управление текущим пользователем (`/users`)
+- `GET /users/info` — Получение информации о текущем пользователе.
+- `PATCH /users/update` — Обновление данных текущего пользователя.
+- `POST /users/logout` — Выход из системы.
+
+### Управление картами пользователя (`/cards`)
+- `GET /cards` — Получить все свои карты.
+- `GET /cards/{id}` — Получить карту по ID.
+- `GET /cards/{id}/balance` — Получить баланс карты по ID.
+- `POST /cards/transfer` — Перевод средств между своими картами.
+- `POST /cards/{id}/block-request` — Создать запрос на блокировку своей карты.
+- `GET /cards/block-requests` — Посмотреть свои запросы на блокировку.
+
+### Администрирование: Карты (`/admin/cards`)
+- `GET /admin/cards` — Получить все карты в системе.
+- `POST /admin/cards` — Создать новую карту для любого пользователя.
+- `DELETE /admin/cards/{id}` — Удалить карту.
+- `PATCH /admin/cards/{id}/block` — Заблокировать карту.
+- `PATCH /admin/cards/{id}/activate` — Активировать карту.
+
+### Администрирование: Пользователи (`/admin/users`)
+- `GET /admin/users` — Получить всех пользователей.
+- `POST /admin/users` — Создать нового пользователя.
+- `PATCH /admin/users/{id}` — Обновить данные пользователя.
+- `DELETE /admin/users/{id}` — Удалить пользователя.
+
+### Администрирование: Запросы на блокировку (`/admin/cards/block-requests`)
+- `GET /admin/cards/block-requests` — Получить все запросы на блокировку.
+- `POST /admin/cards/block-requests/{requestId}/approve` — Подтвердить запрос на блокировку.
+- `POST /admin/cards/block-requests/{requestId}/reject` — Отклонить запрос на блокировку.
 
 ## Защита маршрутов
 - Все маршруты защищены через Spring Security + JWT.
@@ -103,6 +121,9 @@ docker-compose --env-file credentials-dev.env up --build
 ## Переменные окружения
 - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` — настройки БД
 - `JWT_SECRET` — секрет для токенов
+- `VAULT_ADDR` — адрес для подключения к Vault
+- `VAULT_TOKEN` — токен для аутентификации в Vault
+- `VAULT_ROOT_TOKEN` — корневой токен для инициализации Vault в Docker
 - `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD` — настройки почты (если используется)
 - Пример: `credentials.env`, `application.yml`
 
