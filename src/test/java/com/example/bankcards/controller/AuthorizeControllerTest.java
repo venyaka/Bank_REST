@@ -71,7 +71,7 @@ class AuthorizeControllerTest {
         Mockito.doNothing().when(authorizeService).registerUser(Mockito.any(), Mockito.any());
         mockMvc.perform(post("/authorize/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"firstName\":\"Venya\",\"lastName\":\"Ilkov\",\"email\":\"test@gmail.com\",\"password\":\"12345\"}"))
+                .content("{\"firstName\":\"Venya\",\"lastName\":\"Ilkov\",\"email\":\"test@gmail.com\",\"password\":\"12345678\"}"))
                 .andExpect(status().isOk());
     }
 

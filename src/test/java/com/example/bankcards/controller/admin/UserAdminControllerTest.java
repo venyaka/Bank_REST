@@ -69,7 +69,7 @@ class UserAdminControllerTest {
         Mockito.when(userService.createUser(Mockito.any())).thenReturn(resp);
         mockMvc.perform(post("/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"new@gmail.com\",\"firstName\":\"Venya\",\"lastName\":\"Ilkov\",\"password\":\"12345\"}"))
+                .content("{\"email\":\"new@gmail.com\",\"firstName\":\"Venya\",\"lastName\":\"Ilkov\",\"password\":\"12345678\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(2L));
     }
