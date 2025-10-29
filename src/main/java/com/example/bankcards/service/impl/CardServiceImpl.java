@@ -16,8 +16,10 @@ import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.service.CardService;
 import com.example.bankcards.util.CardEncryptor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +33,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CardServiceImpl implements CardService {
+
+    @Value("${card.expiration-years}")
+    private int cardExpirationYears;
 
     private final CardRepository cardRepository;
     private final CardEncryptor cardEncryptor;
@@ -52,7 +57,7 @@ public class CardServiceImpl implements CardService {
         card.setOwner(owner);
         String cardNumber = generateCardNumber();
         card.setCardNumber(encryptCardNumber(cardNumber));
-        card.setExpireDate(java.time.LocalDate.now().plusYears(3));
+        card.setExpireDate(java.time.LocalDate.now().plusYears(cardExpirationYears));
         card.setStatus(CardStatus.ACTIVE);
         card.setBalance(java.math.BigDecimal.ZERO);
         Card saved = cardRepository.save(card);

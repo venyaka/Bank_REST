@@ -52,6 +52,9 @@ jwt:
     time-expiration: 10000000000000
     refresh-expiration-seconds: 604800 # 7 дней
 
+card:
+  expiration-years: 3
+
 springdoc:
   swagger-ui:
     enabled: true
