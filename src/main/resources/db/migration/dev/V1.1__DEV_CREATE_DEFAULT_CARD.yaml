@@ -8,7 +8,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: card_number
-                  value: '1666005642977658'
+                  value: 'mH6+lvTC1Whw8qCSwm/rRYqjYkH96N8FTcMlxsaVuJ4='
               - column:
                   name: owner_id
                   value: 1
