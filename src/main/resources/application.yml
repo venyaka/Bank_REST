@@ -63,10 +63,8 @@ springdoc:
     enabled: true
     path: /v3/api-docs
 
-# Настройки логирования (дополнительные к logback-spring.xml)
+# Настройки логирования (JSON для ELK в prod профиле)
 logging:
   level:
     root: INFO
     com.example.bankcards: DEBUG
-  config: classpath:logback-spring.xml
-

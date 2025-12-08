@@ -6,7 +6,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
+import static net.logstash.logback.argument.StructuredArguments.*;
 
 /**
  * Аспект для логирования операций в приложении.
@@ -15,6 +15,8 @@ import java.util.Arrays;
  * - Входящих запросов в контроллеры
  * - Времени выполнения методов сервисов
  * - Исключений в сервисном слое
+ * <p>
+ * Использует StructuredArguments для JSON-формата логов (ELK-совместимость).
  */
 @Aspect
 @Component
@@ -42,9 +44,10 @@ public class LoggingAspect {
     public void logControllerMethodCall(JoinPoint joinPoint) {
         String className = joinPoint.getSignature().getDeclaringType().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
-        Object[] args = joinPoint.getArgs();
 
-        log.info("==> {}.{}() с аргументами: {}", className, methodName, formatArgs(args));
+        log.info("Вызов контроллера: {}.{}()",
+                kv("controller", className),
+                kv("method", methodName));
     }
 
     /**
@@ -58,7 +61,9 @@ public class LoggingAspect {
         String className = joinPoint.getSignature().getDeclaringType().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
 
-        log.info("<== {}.{}() завершён успешно", className, methodName);
+        log.info("Контроллер завершён успешно: {}.{}()",
+                kv("controller", className),
+                kv("method", methodName));
     }
 
     /**
@@ -79,15 +84,26 @@ public class LoggingAspect {
             long executionTime = System.currentTimeMillis() - startTime;
 
             if (executionTime > 1000) {
-                log.warn("Медленное выполнение: {}.{}() заняло {} мс", className, methodName, executionTime);
+                log.warn("Медленное выполнение сервиса",
+                        kv("service", className),
+                        kv("method", methodName),
+                        kv("executionTimeMs", executionTime),
+                        kv("slow", true));
             } else {
-                log.debug("{}.{}() выполнен за {} мс", className, methodName, executionTime);
+                log.debug("Сервис выполнен",
+                        kv("service", className),
+                        kv("method", methodName),
+                        kv("executionTimeMs", executionTime));
             }
 
             return result;
         } catch (Throwable ex) {
             long executionTime = System.currentTimeMillis() - startTime;
-            log.debug("{}.{}() завершился с ошибкой за {} мс", className, methodName, executionTime);
+            log.debug("Сервис завершился с ошибкой",
+                    kv("service", className),
+                    kv("method", methodName),
+                    kv("executionTimeMs", executionTime),
+                    kv("error", true));
             throw ex;
         }
     }
@@ -103,42 +119,11 @@ public class LoggingAspect {
         String className = joinPoint.getSignature().getDeclaringType().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
 
-        log.error("Исключение в {}.{}(): {} - {}",
-                className, methodName, ex.getClass().getSimpleName(), ex.getMessage());
-    }
-
-    /**
-     * Форматирует аргументы метода для логирования.
-     * Скрывает чувствительные данные (пароли, токены).
-     *
-     * @param args аргументы метода
-     * @return отформатированная строка
-     */
-    private String formatArgs(Object[] args) {
-        if (args == null || args.length == 0) {
-            return "[]";
-        }
-
-        return Arrays.stream(args)
-                .map(arg -> {
-                    if (arg == null) {
-                        return "null";
-                    }
-                    String argString = arg.toString();
-                    // Скрываем чувствительные данные
-                    if (argString.toLowerCase().contains("password") ||
-                        argString.toLowerCase().contains("token") ||
-                        argString.toLowerCase().contains("secret")) {
-                        return arg.getClass().getSimpleName() + "[HIDDEN]";
-                    }
-                    // Ограничиваем длину вывода
-                    if (argString.length() > 100) {
-                        return argString.substring(0, 100) + "...";
-                    }
-                    return argString;
-                })
-                .toList()
-                .toString();
+        log.error("Исключение в сервисе",
+                kv("service", className),
+                kv("method", methodName),
+                kv("exceptionType", ex.getClass().getSimpleName()),
+                kv("exceptionMessage", ex.getMessage()));
     }
 }
 

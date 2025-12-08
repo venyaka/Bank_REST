@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Реализация сервиса для управления банковскими картами.
  * Включает в себя создание, блокировку, активацию, удаление карт, а также операции с балансом и переводы.
@@ -49,10 +51,10 @@ public class CardServiceImpl implements CardService {
      */
     @Override
     public CardRespDTO createCard(CreateCardReqDTO createCardReqDTO) {
-        log.debug("Создание новой карты для пользователя с id: {}", createCardReqDTO.getOwnerId());
+        log.debug("Создание новой карты", kv("ownerId", createCardReqDTO.getOwnerId()));
         Optional<User> optionalUser = userRepository.findById(createCardReqDTO.getOwnerId());
         if (optionalUser.isEmpty()) {
-            log.warn("Пользователь с id {} не найден при создании карты", createCardReqDTO.getOwnerId());
+            log.warn("Пользователь не найден при создании карты", kv("ownerId", createCardReqDTO.getOwnerId()));
             throw new NotFoundException(NotFoundError.USER_NOT_FOUND);
         }
         User owner = optionalUser.get();
@@ -65,7 +67,7 @@ public class CardServiceImpl implements CardService {
         card.setStatus(CardStatus.ACTIVE);
         card.setBalance(java.math.BigDecimal.ZERO);
         Card saved = cardRepository.save(card);
-        log.info("Карта успешно создана с id: {} для пользователя: {}", saved.getId(), owner.getEmail());
+        log.info("Карта успешно создана", kv("cardId", saved.getId()), kv("ownerEmail", owner.getEmail()));
         return toRespDTO(saved);
     }
 
@@ -74,15 +76,15 @@ public class CardServiceImpl implements CardService {
      */
     @Override
     public void blockCard(Long cardId, User requester) {
-        log.debug("Запрос на блокировку карты id: {} от пользователя: {}", cardId, requester.getEmail());
+        log.debug("Запрос на блокировку карты", kv("cardId", cardId), kv("requester", requester.getEmail()));
         Card card = getCardEntityById(cardId, requester);
         if (!isAdminOrOwner(requester, card)) {
-            log.warn("Отказ в доступе: пользователь {} не может заблокировать карту {}", requester.getEmail(), cardId);
+            log.warn("Отказ в доступе на блокировку карты", kv("cardId", cardId), kv("requester", requester.getEmail()));
             throw new BadRequestException(BadRequestError.NO_ACCESS);
         }
         card.setStatus(CardStatus.BLOCKED);
         cardRepository.save(card);
-        log.info("Карта id: {} заблокирована пользователем: {}", cardId, requester.getEmail());
+        log.info("Карта заблокирована", kv("cardId", cardId), kv("requester", requester.getEmail()));
     }
 
     /**
@@ -90,15 +92,15 @@ public class CardServiceImpl implements CardService {
      */
     @Override
     public void activateCard(Long cardId, User requester) {
-        log.debug("Запрос на активацию карты id: {} от пользователя: {}", cardId, requester.getEmail());
+        log.debug("Запрос на активацию карты", kv("cardId", cardId), kv("requester", requester.getEmail()));
         Card card = getCardEntityById(cardId, requester);
         if (!isAdminOrOwner(requester, card)) {
-            log.warn("Отказ в доступе: пользователь {} не может активировать карту {}", requester.getEmail(), cardId);
+            log.warn("Отказ в доступе на активацию карты", kv("cardId", cardId), kv("requester", requester.getEmail()));
             throw new BadRequestException(BadRequestError.NO_ACCESS);
         }
         card.setStatus(CardStatus.ACTIVE);
         cardRepository.save(card);
-        log.info("Карта id: {} активирована пользователем: {}", cardId, requester.getEmail());
+        log.info("Карта активирована", kv("cardId", cardId), kv("requester", requester.getEmail()));
     }
 
     /**
@@ -106,14 +108,14 @@ public class CardServiceImpl implements CardService {
      */
     @Override
     public void deleteCard(Long cardId, User requester) {
-        log.debug("Запрос на удаление карты id: {} от пользователя: {}", cardId, requester.getEmail());
+        log.debug("Запрос на удаление карты", kv("cardId", cardId), kv("requester", requester.getEmail()));
         Card card = getCardEntityById(cardId, requester);
         if (!isAdminOrOwner(requester, card)) {
-            log.warn("Отказ в доступе: пользователь {} не может удалить карту {}", requester.getEmail(), cardId);
+            log.warn("Отказ в доступе на удаление карты", kv("cardId", cardId), kv("requester", requester.getEmail()));
             throw new BadRequestException(BadRequestError.NO_ACCESS);
         }
         cardRepository.delete(card);
-        log.info("Карта id: {} удалена пользователем: {}", cardId, requester.getEmail());
+        log.info("Карта удалена", kv("cardId", cardId), kv("requester", requester.getEmail()));
     }
 
     /**
@@ -165,41 +167,49 @@ public class CardServiceImpl implements CardService {
      */
     @Override
     public void transferBetweenCards(TransferReqDTO transferReqDTO, User requester) {
-        log.debug("Запрос на перевод от пользователя {}: карта {} -> карта {}, сумма: {}",
-                requester.getEmail(), transferReqDTO.getFromCardId(), transferReqDTO.getToCardId(), transferReqDTO.getAmount());
+        log.debug("Запрос на перевод между картами",
+                kv("fromCardId", transferReqDTO.getFromCardId()),
+                kv("toCardId", transferReqDTO.getToCardId()),
+                kv("amount", transferReqDTO.getAmount()),
+                kv("requester", requester.getEmail()));
         Card from = getCardEntityById(transferReqDTO.getFromCardId(), requester);
         Card to = getCardEntityById(transferReqDTO.getToCardId(), requester);
         if (!from.getOwner().equals(requester) || !to.getOwner().equals(requester)) {
-            log.warn("Отказ в переводе: пользователь {} пытается перевести между чужими картами", requester.getEmail());
+            log.warn("Отказ в переводе: попытка перевода между чужими картами", kv("requester", requester.getEmail()));
             throw new BadRequestException(BadRequestError.ONLY_OWN_CARDS_TRANSFER);
         }
         if (from.getStatus() == CardStatus.BLOCKED) {
-            log.warn("Отказ в переводе: карта-источник {} заблокирована", from.getId());
+            log.warn("Отказ в переводе: карта-источник заблокирована", kv("fromCardId", from.getId()));
             throw new BadRequestException(BadRequestError.FROM_CARD_BLOCKED);
         }
         if (to.getStatus() == CardStatus.BLOCKED) {
-            log.warn("Отказ в переводе: карта-получатель {} заблокирована", to.getId());
+            log.warn("Отказ в переводе: карта-получатель заблокирована", kv("toCardId", to.getId()));
             throw new BadRequestException(BadRequestError.TO_CARD_BLOCKED);
         }
         if (from.getStatus() == CardStatus.EXPIRED) {
-            log.warn("Отказ в переводе: срок действия карты-источника {} истёк", from.getId());
+            log.warn("Отказ в переводе: срок действия карты-источника истёк", kv("fromCardId", from.getId()));
             throw new BadRequestException(BadRequestError.FROM_CARD_EXPIRED);
         }
         if (to.getStatus() == CardStatus.EXPIRED) {
-            log.warn("Отказ в переводе: срок действия карты-получателя {} истёк", to.getId());
+            log.warn("Отказ в переводе: срок действия карты-получателя истёк", kv("toCardId", to.getId()));
             throw new BadRequestException(BadRequestError.TO_CARD_EXPIRED);
         }
         if (from.getBalance().compareTo(transferReqDTO.getAmount()) < 0) {
-            log.warn("Отказ в переводе: недостаточно средств на карте {}. Баланс: {}, запрошено: {}",
-                    from.getId(), from.getBalance(), transferReqDTO.getAmount());
+            log.warn("Отказ в переводе: недостаточно средств",
+                    kv("fromCardId", from.getId()),
+                    kv("balance", from.getBalance()),
+                    kv("requestedAmount", transferReqDTO.getAmount()));
             throw new BadRequestException(BadRequestError.INSUFFICIENT_FUNDS);
         }
         from.setBalance(from.getBalance().subtract(transferReqDTO.getAmount()));
         to.setBalance(to.getBalance().add(transferReqDTO.getAmount()));
         cardRepository.save(from);
         cardRepository.save(to);
-        log.info("Перевод выполнен успешно: {} -> {}, сумма: {}, пользователь: {}",
-                from.getId(), to.getId(), transferReqDTO.getAmount(), requester.getEmail());
+        log.info("Перевод выполнен успешно",
+                kv("fromCardId", from.getId()),
+                kv("toCardId", to.getId()),
+                kv("amount", transferReqDTO.getAmount()),
+                kv("requester", requester.getEmail()));
     }
 
     /**

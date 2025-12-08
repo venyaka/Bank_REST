@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Реализация сервиса для управления пользователями.
  */
@@ -49,11 +51,11 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        log.debug("Загрузка пользователя по email: {}", email);
+        log.debug("Загрузка пользователя", kv("email", email));
         return userRepository
                 .findByEmail(email)
                 .orElseThrow(() -> {
-                    log.warn("Пользователь с email {} не найден", email);
+                    log.warn("Пользователь не найден", kv("email", email));
                     return new NotFoundException(NotFoundError.USER_NOT_FOUND);
                 });
     }
@@ -65,7 +67,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserRespDTO getCurrentUserInfo() {
         User user = this.getCurrentUser();
-        log.debug("Получение информации о текущем пользователе: {}", user.getEmail());
+        log.debug("Получение информации о текущем пользователе", kv("email", user.getEmail()), kv("userId", user.getId()));
         return getResponseDTO(user);
     }
 
@@ -76,7 +78,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserRespDTO updateCurrentUser(UpdateCurrentUserReqDTO updateCurrentUserReqDTO) {
         User user = this.getCurrentUser();
-        log.debug("Обновление данных пользователя: {}", user.getEmail());
+        log.debug("Обновление данных пользователя", kv("email", user.getEmail()), kv("userId", user.getId()));
 
         if (updateCurrentUserReqDTO.getFirstName() != null && !updateCurrentUserReqDTO.getFirstName().isBlank()) {
             user.setFirstName(updateCurrentUserReqDTO.getFirstName());
@@ -85,7 +87,7 @@ public class UserServiceImpl implements UserService {
             user.setLastName(updateCurrentUserReqDTO.getLastName());
         }
         userRepository.save(user);
-        log.info("Данные пользователя {} успешно обновлены", user.getEmail());
+        log.info("Данные пользователя обновлены", kv("email", user.getEmail()), kv("userId", user.getId()));
 
         return getResponseDTO(user);
     }

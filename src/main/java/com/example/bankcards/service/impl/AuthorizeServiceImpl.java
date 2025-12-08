@@ -28,6 +28,8 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Реализация сервиса для аутентификации и регистрации пользователей.
  */
@@ -51,16 +53,16 @@ public class AuthorizeServiceImpl implements AuthorizeService {
     public ResponseEntity<TokenRespDTO> authorizeUser(UserAuthorizeReqDTO userAuthorizeDTO, HttpServletResponse response) {
         String userEmail = userAuthorizeDTO.getEmail();
         String userPassword = userAuthorizeDTO.getPassword();
-        log.debug("Попытка авторизации пользователя: {}", userEmail);
+        log.debug("Попытка авторизации", kv("email", userEmail));
         Optional<User> userOptional = userRepository.findByEmail(userEmail);
 
         if (userOptional.isEmpty()) {
-            log.warn("Попытка авторизации с несуществующим email: {}", userEmail);
+            log.warn("Авторизация не удалась: пользователь не найден", kv("email", userEmail));
             throw new AuthorizeException(AuthorizedError.USER_WITH_THIS_EMAIL_NOT_FOUND);
         }
         User user = userOptional.get();
         if (!passwordEncoder.matches(userPassword, user.getPassword())) {
-            log.warn("Неверный пароль для пользователя: {}", userEmail);
+            log.warn("Авторизация не удалась: неверный пароль", kv("email", userEmail));
             throw new AuthorizeException(AuthorizedError.NOT_CORRECT_PASSWORD);
         }
         checkUserCanAuthorize(user);
@@ -77,7 +79,7 @@ public class AuthorizeServiceImpl implements AuthorizeService {
         sessionService.saveNewSession(user.getId());
         cookieService.addAuthCookies(response, jwtToken, refreshToken);
 
-        log.info("Пользователь {} успешно авторизован", userEmail);
+        log.info("Авторизация успешна", kv("email", userEmail), kv("userId", user.getId()));
         return ResponseEntity.ok(tokenDTO);
     }
 
@@ -87,9 +89,9 @@ public class AuthorizeServiceImpl implements AuthorizeService {
     @Override
     @Transactional
     public void registerUser(@Valid RegisterReqDTO registerDTO, HttpServletRequest request) {
-        log.debug("Попытка регистрации пользователя: {}", registerDTO.getEmail());
+        log.debug("Попытка регистрации", kv("email", registerDTO.getEmail()));
         if (userRepository.findByEmail(registerDTO.getEmail()).isPresent()) {
-            log.warn("Попытка регистрации с уже существующим email: {}", registerDTO.getEmail());
+            log.warn("Регистрация не удалась: email уже существует", kv("email", registerDTO.getEmail()));
             throw new BadRequestException(BadRequestError.USER_ALREADY_EXISTS);
         }
         User user = new User();
@@ -102,7 +104,7 @@ public class AuthorizeServiceImpl implements AuthorizeService {
         userRepository.save(user);
 
         mailService.sendUserVerificationMail(user, request);
-        log.info("Пользователь {} успешно зарегистрирован, ожидается верификация email", registerDTO.getEmail());
+        log.info("Регистрация успешна, ожидается верификация", kv("email", registerDTO.getEmail()));
     }
 
     /**
@@ -123,28 +125,28 @@ public class AuthorizeServiceImpl implements AuthorizeService {
     @Override
     @Transactional
     public void verificateUser(String email, String verificationToken) {
-        log.debug("Попытка верификации пользователя: {}", email);
+        log.debug("Попытка верификации", kv("email", email));
         Optional<User> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isEmpty()) {
-            log.warn("Верификация невозможна: пользователь {} не найден", email);
+            log.warn("Верификация не удалась: пользователь не найден", kv("email", email));
             throw new NotFoundException(NotFoundError.USER_NOT_FOUND);
         }
         User user = optionalUser.get();
 
         if (user.getIsEmailVerificated()) {
-            log.warn("Пользователь {} уже верифицирован", email);
+            log.warn("Верификация не удалась: уже верифицирован", kv("email", email));
             throw new BadRequestException(BadRequestError.USER_ALREADY_VERIFICATED);
         }
 
         if (user.getToken() == null || !user.getToken().equals(verificationToken)) {
-            log.warn("Неверный код верификации для пользователя: {}", email);
+            log.warn("Верификация не удалась: неверный код", kv("email", email));
             throw new BadRequestException(BadRequestError.NOT_CORRECT_VERIFICATION_CODE);
         }
 
         user.setToken(null);
         user.setIsEmailVerificated(Boolean.TRUE);
         userRepository.save(user);
-        log.info("Пользователь {} успешно верифицирован", email);
+        log.info("Верификация успешна", kv("email", email), kv("userId", user.getId()));
     }
 
     /**
