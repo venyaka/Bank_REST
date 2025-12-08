@@ -31,11 +31,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Реализация сервиса для управления пользователями.
  */
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -46,9 +49,13 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        log.debug("Загрузка пользователя по email: {}", email);
         return userRepository
                 .findByEmail(email)
-                .orElseThrow(() -> new NotFoundException(NotFoundError.USER_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("Пользователь с email {} не найден", email);
+                    return new NotFoundException(NotFoundError.USER_NOT_FOUND);
+                });
     }
 
     /**
@@ -58,6 +65,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserRespDTO getCurrentUserInfo() {
         User user = this.getCurrentUser();
+        log.debug("Получение информации о текущем пользователе: {}", user.getEmail());
         return getResponseDTO(user);
     }
 
@@ -68,6 +76,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserRespDTO updateCurrentUser(UpdateCurrentUserReqDTO updateCurrentUserReqDTO) {
         User user = this.getCurrentUser();
+        log.debug("Обновление данных пользователя: {}", user.getEmail());
 
         if (updateCurrentUserReqDTO.getFirstName() != null && !updateCurrentUserReqDTO.getFirstName().isBlank()) {
             user.setFirstName(updateCurrentUserReqDTO.getFirstName());
@@ -76,6 +85,7 @@ public class UserServiceImpl implements UserService {
             user.setLastName(updateCurrentUserReqDTO.getLastName());
         }
         userRepository.save(user);
+        log.info("Данные пользователя {} успешно обновлены", user.getEmail());
 
         return getResponseDTO(user);
     }

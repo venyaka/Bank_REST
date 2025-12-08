@@ -58,7 +58,15 @@ card:
 springdoc:
   swagger-ui:
     enabled: true
-    url: /docs/openapi.yaml
+    url: /v3/api-docs #/docs/openapi.yaml
   api-docs:
     enabled: true
     path: /v3/api-docs
+
+# Настройки логирования (дополнительные к logback-spring.xml)
+logging:
+  level:
+    root: INFO
+    com.example.bankcards: DEBUG
+  config: classpath:logback-spring.xml
+
