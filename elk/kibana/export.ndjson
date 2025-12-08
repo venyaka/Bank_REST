@@ -1,0 +1,31 @@
+{
+  "version": "8.11.0",
+  "objects": [
+    {
+      "id": "bankcards-index-pattern",
+      "type": "index-pattern",
+      "attributes": {
+        "title": "bankcards-logs-*",
+        "timeFieldName": "@timestamp"
+      }
+    },
+    {
+      "id": "bankcards-dashboard",
+      "type": "dashboard",
+      "attributes": {
+        "title": "Bank Cards - Overview",
+        "description": "Обзор логов приложения Bank Cards",
+        "panelsJSON": "[{\"gridData\":{\"x\":0,\"y\":0,\"w\":24,\"h\":8,\"i\":\"1\"},\"type\":\"lens\",\"panelIndex\":\"1\",\"title\":\"Логи по уровням\"},{\"gridData\":{\"x\":24,\"y\":0,\"w\":24,\"h\":8,\"i\":\"2\"},\"type\":\"lens\",\"panelIndex\":\"2\",\"title\":\"Запросы в секунду\"},{\"gridData\":{\"x\":0,\"y\":8,\"w\":48,\"h\":12,\"i\":\"3\"},\"type\":\"lens\",\"panelIndex\":\"3\",\"title\":\"Timeline логов\"}]",
+        "optionsJSON": "{\"useMargins\":true,\"syncColors\":false,\"hidePanelTitles\":false}",
+        "timeRestore": true,
+        "timeTo": "now",
+        "timeFrom": "now-24h",
+        "refreshInterval": {
+          "pause": false,
+          "value": 30000
+        }
+      }
+    }
+  ]
+}
+

@@ -7,4 +7,6 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=builder /app/target/*.jar /app/*.jar
 EXPOSE 8185
+# Используем docker профиль для JSON-логов (ELK)
+ENV SPRING_PROFILES_ACTIVE=docker
 ENTRYPOINT ["java", "-jar", "/app/*.jar"]
