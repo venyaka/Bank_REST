@@ -1,4 +1,3 @@
-
 # Bank REST API
 
 ## Описание
@@ -13,119 +12,280 @@
 - ✅ Аутентификация и авторизация (Spring Security + JWT)
 - ✅ Ролевой доступ (ADMIN, USER)
 - ✅ Управление пользователями (ADMIN)
-- ✅ Шифрование и маскирование номеров карт
+- ✅ Шифрование и маскирование номеров карт (HashiCorp Vault)
 - ✅ Миграции через Liquibase
 - ✅ Документация Swagger/OpenAPI
 - ✅ Docker Compose для dev-среды
 - ✅ Юнит-тесты бизнес-логики
+- ✅ Централизованное логирование (SLF4J + Logback)
+- ✅ ELK Stack (Elasticsearch, Logstash, Kibana, Filebeat)
+- ✅ JSON-логи для продакшена
+- ✅ Трассировка запросов (requestId, userId)
+
+## Технологии
+| Категория | Технологии |
+|-----------|------------|
+| Backend | Java 17, Spring Boot 3.5, Spring Security, Spring Data JPA |
+| База данных | PostgreSQL 12, Liquibase |
+| Безопасность | JWT, HashiCorp Vault |
+| Логирование | SLF4J, Logback, Logstash Encoder |
+| Мониторинг | Elasticsearch 8.11, Kibana 8.11, Logstash, Filebeat |
+| Документация | Swagger/OpenAPI 3.0 |
+| Контейнеризация | Docker, Docker Compose |
+| Тестирование | JUnit 5, Mockito |
 
 ## Структура проекта
-- `src/main/java/com/example/bankcards/controller` — REST-контроллеры
-- `src/main/java/com/example/bankcards/service` — бизнес-логика
-- `src/main/java/com/example/bankcards/repository` — доступ к данным
-- `src/main/java/com/example/bankcards/entity` — сущности JPA
-- `src/main/java/com/example/bankcards/dto` — DTO для запросов/ответов
-- `src/main/resources/db/migration` — миграции Liquibase
-- `src/main/resources/static/docs/openapi.yaml` — OpenAPI спецификация
-- `src/test/java/com/example/bankcards` — юнит-тесты
+```
+src/
+├── main/
+│   ├── java/com/example/bankcards/
+│   │   ├── aspect/           # AOP-аспекты (логирование)
+│   │   ├── config/           # Конфигурация (Security, Beans)
+│   │   ├── constant/         # Константы
+│   │   ├── controller/       # REST-контроллеры
+│   │   │   └── admin/        # Админские контроллеры
+│   │   ├── dto/              # DTO для запросов/ответов
+│   │   ├── entity/           # JPA-сущности
+│   │   ├── exception/        # Обработка ошибок
+│   │   │   └── errors/       # Enum ошибок
+│   │   ├── filter/           # Фильтры (MDC для логирования)
+│   │   ├── repository/       # JPA-репозитории
+│   │   ├── security/         # JWT, фильтры безопасности
+│   │   ├── service/          # Бизнес-логика
+│   │   │   └── impl/         # Реализации сервисов
+│   │   └── util/             # Утилиты (шифрование карт)
+│   └── resources/
+│       ├── db/migration/     # Миграции Liquibase
+│       ├── static/docs/      # OpenAPI спецификация
+│       ├── application.yml   # Конфигурация приложения
+│       └── logback-spring.xml # Конфигурация логирования
+├── test/                     # Юнит-тесты
+└── elk/                      # Конфигурация ELK Stack
+    ├── filebeat/
+    ├── logstash/
+    └── kibana/
+```
 
 ## Запуск проекта
 
-Перед запуском проекта обязательно заполните свои данные в файле `credentials-dev.env` (для локального запуска) или `credentials-docker.env` (для запуска через Docker) в корне проекта. В этих файлах указываются параметры для подключения к базе данных, pgAdmin, Vault и другие переменные окружения.
+### Переменные окружения
+Перед запуском заполните файл `credentials-dev.env` (локально) или `credentials-docker.env` (Docker):
 
-> **Важно:**
-> - Для локального запуска используйте `credentials-dev.env`.
-> - Для запуска через Docker используйте `credentials-docker.env`.
-> - В файле `application.yml` в строке:
->   ```yaml
->   import: optional:file:credentials-dev.env[.properties]
->   ```
->   укажите нужный файл, например:
->   ```yaml
->   import: optional:file:credentials-docker.env[.properties]
->   ```
-> - В `docker-compose.yml` для Docker-окружения используйте:
->   ```yaml
->   env_file:
->     - credentials-docker.env
->   ```
-Заполните файл `credentials-docker.env`, затем выполните команду:
-```bash
-docker-compose --env-file credentials-dev.env up --build
+```env
+# Database
+POSTGRES_URL=jdbc:postgresql://localhost:5432/bankcards
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=bankcards
+POSTGRES_PORT=5432:5432
+
+# Server
+SERVER_PORT=8185
+BACKEND_PORT=8185:8185
+
+# JWT
+JWT_SECRET=your_jwt_secret_key
+
+# Vault
+VAULT_ADDR=http://localhost:8200
+VAULT_ROOT_TOKEN=root
+VAULT_ENCRYPTION_KEY=your_32_char_encryption_key
+
+# Mail (опционально)
+SENDER_MAIL=your_email@yandex.ru
+SENDER_PASSWORD=your_app_password
+
+# pgAdmin
+PGADMIN_DEFAULT_EMAIL=admin@admin.com
+PGADMIN_DEFAULT_PASSWORD=admin
+PGADMIN_PORT=5050:80
 ```
-- Swagger UI: http://localhost:8185/swagger-ui.html
 
-### 2. Запуск backend через IDE, остальные сервисы — через Docker
-1. Запустите БД через Docker:
-   ```bash
-   docker-compose --env-file credentials-dev.env up db pgadmin vault vault-init
-   ```
-2. Убедитесь, что переменные окружения backend соответствуют настройкам БД (см. `application.yml` и `.env`).
-3. Запустите backend из IDE (`Bank_RESTApplication.java`).
-4. В файле `application.yml` укажите:
-   ```yaml
-   import: optional:file:credentials-dev.env[.properties]
-   ```
-5. Запустите backend из IDE (`Bank_RESTApplication.java`).
+### Вариант 1: Полный запуск через Docker (с ELK)
 
-## Swagger
-- Swagger UI: http://localhost:8185/swagger-ui.html
-- OpenAPI спецификация: `src/main/resources/static/docs/openapi.yaml`
+```bash
+# Запуск всех сервисов включая ELK Stack
+docker-compose --env-file credentials-docker.env up -d
 
-## Основные эндпоинты
+# Или без ELK (только основные сервисы)
+docker-compose --env-file credentials-docker.env up -d backend db vault vault-init pgadmin
+```
 
-### Аутентификация и Регистрация (`/authorize`)
-- `POST /authorize/login` — Вход в систему, получение JWT токенов.
-- `POST /authorize/register` — Регистрация нового пользователя.
-- `POST /authorize/verificateCode` — Повторная отправка кода верификации.
-- `GET, POST /authorize/verification` — Верификация пользователя по email и токену.
+### Вариант 2: Backend через IDE + Docker для инфраструктуры
 
-### Управление текущим пользователем (`/users`)
-- `GET /users/info` — Получение информации о текущем пользователе.
-- `PATCH /users/update` — Обновление данных текущего пользователя.
-- `POST /users/logout` — Выход из системы.
+```bash
+# 1. Запустите инфраструктуру
+docker-compose --env-file credentials-dev.env up -d db vault vault-init pgadmin
 
-### Управление картами пользователя (`/cards`)
-- `GET /cards` — Получить все свои карты.
-- `GET /cards/{id}` — Получить карту по ID.
-- `GET /cards/{id}/balance` — Получить баланс карты по ID.
-- `POST /cards/transfer` — Перевод средств между своими картами.
-- `POST /cards/{id}/block-request` — Создать запрос на блокировку своей карты.
-- `GET /cards/block-requests` — Посмотреть свои запросы на блокировку.
+# 2. Опционально: запустите ELK Stack
+docker-compose --env-file credentials-dev.env up -d elasticsearch kibana logstash filebeat
 
-### Администрирование: Карты (`/admin/cards`)
-- `GET /admin/cards` — Получить все карты в системе.
-- `POST /admin/cards` — Создать новую карту для любого пользователя.
-- `DELETE /admin/cards/{id}` — Удалить карту.
-- `PATCH /admin/cards/{id}/block` — Заблокировать карту.
-- `PATCH /admin/cards/{id}/activate` — Активировать карту.
+# 3. В application.yml укажите:
+#    import: optional:file:credentials-dev.env[.properties]
 
-### Администрирование: Пользователи (`/admin/users`)
-- `GET /admin/users` — Получить всех пользователей.
-- `POST /admin/users` — Создать нового пользователя.
-- `PATCH /admin/users/{id}` — Обновить данные пользователя.
-- `DELETE /admin/users/{id}` — Удалить пользователя.
+# 4. Запустите Bank_RESTApplication.java из IDE
+```
 
-### Администрирование: Запросы на блокировку (`/admin/cards/block-requests`)
-- `GET /admin/cards/block-requests` — Получить все запросы на блокировку.
-- `POST /admin/cards/block-requests/{requestId}/approve` — Подтвердить запрос на блокировку.
-- `POST /admin/cards/block-requests/{requestId}/reject` — Отклонить запрос на блокировку.
+### Доступ к сервисам
 
-## Защита маршрутов
-- Все маршруты защищены через Spring Security + JWT.
-- Доступ к эндпоинтам:
-    - ADMIN: полный доступ ко всем картам и пользователям
-    - USER: доступ только к своим картам и переводам
-- Маскирование номеров карт реализовано для всех ответов
+| Сервис | URL | Описание |
+|--------|-----|----------|
+| **Backend API** | http://localhost:8185 | REST API |
+| **Swagger UI** | http://localhost:8185/swagger-ui.html | Документация API |
+| **Kibana** | http://localhost:5601 | Визуализация логов |
+| **Elasticsearch** | http://localhost:9200 | Поиск по логам |
+| **pgAdmin** | http://localhost:5050 | Управление БД |
+| **Vault** | http://localhost:8200 | Управление секретами |
 
-## Переменные окружения
-- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` — настройки БД
-- `JWT_SECRET` — секрет для токенов
-- `VAULT_ADDR` — адрес для подключения к Vault
-- `VAULT_TOKEN` — токен для аутентификации в Vault
-- `VAULT_ROOT_TOKEN` — корневой токен для инициализации Vault в Docker
-- `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD` — настройки почты (если используется)
-- Пример: `credentials.env`, `application.yml`
+## Логирование
 
-## Авторы
+### Архитектура
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Spring App │ ──► │   stdout    │ ──► │  Filebeat   │ ──► │    ELK      │
+│  (Logback)  │     │   (JSON)    │     │  Logstash   │     │   Stack     │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+```
+
+### Профили логирования
+- **dev/default** — цветной вывод в консоль (человекочитаемый)
+- **prod/docker/k8s** — JSON-формат для ELK
+- **test** — минимальное логирование
+
+### Пример JSON-лога (prod)
+```json
+{
+  "timestamp": "2025-12-09T10:30:45.123Z",
+  "level": "INFO",
+  "logger": "CardServiceImpl",
+  "message": "Карта успешно создана",
+  "cardId": 123,
+  "ownerEmail": "user@example.com",
+  "requestId": "a1b2c3d4",
+  "userId": "456",
+  "clientIp": "192.168.1.1",
+  "app": "bank-rest",
+  "env": "prod"
+}
+```
+
+### Настройка Kibana
+1. Откройте http://localhost:5601
+2. **Management** → **Stack Management** → **Data Views**
+3. Создайте Data View: `bankcards-logs-*`
+4. Выберите `@timestamp` как Time field
+5. Перейдите в **Discover** для просмотра логов
+
+### Полезные запросы в Kibana
+```
+# Все ошибки
+level: "ERROR"
+
+# Логи конкретного пользователя
+userEmail: "user@example.com"
+
+# Трассировка запроса
+requestId: "a1b2c3d4"
+
+# Медленные запросы
+executionTimeMs > 1000
+
+# Операции с картами
+logger: "CardServiceImpl"
+```
+
+## API Эндпоинты
+
+### Аутентификация (`/authorize`)
+| Метод | Путь | Описание |
+|-------|------|----------|
+| POST | `/authorize/login` | Авторизация, получение JWT |
+| POST | `/authorize/register` | Регистрация пользователя |
+| POST | `/authorize/verificateCode` | Повторная отправка кода |
+| POST | `/authorize/verification` | Верификация email |
+
+### Пользователь (`/users`)
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/users/info` | Информация о текущем пользователе |
+| PATCH | `/users/update` | Обновление данных |
+| POST | `/users/logout` | Выход из системы |
+
+### Карты (`/cards`)
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/cards` | Все карты пользователя |
+| GET | `/cards/{id}` | Карта по ID |
+| GET | `/cards/{id}/balance` | Баланс карты |
+| GET | `/cards/search` | Поиск с пагинацией |
+| POST | `/cards/transfer` | Перевод между картами |
+| POST | `/cards/{id}/block-request` | Запрос на блокировку |
+| GET | `/cards/block-requests` | Мои запросы на блокировку |
+
+### Админ: Пользователи (`/admin/users`)
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/admin/users` | Все пользователи |
+| POST | `/admin/users` | Создать пользователя |
+| PATCH | `/admin/users/{id}` | Обновить пользователя |
+| DELETE | `/admin/users/{id}` | Удалить пользователя |
+
+### Админ: Карты (`/admin/cards`)
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/admin/cards` | Все карты |
+| POST | `/admin/cards` | Создать карту |
+| DELETE | `/admin/cards/{id}` | Удалить карту |
+| PATCH | `/admin/cards/{id}/block` | Заблокировать карту |
+| PATCH | `/admin/cards/{id}/activate` | Активировать карту |
+| PATCH | `/admin/cards/{id}/test-balance` | Изменить баланс (тест) |
+
+### Админ: Запросы на блокировку (`/admin/cards/block-requests`)
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/admin/cards/block-requests` | Все запросы |
+| POST | `/admin/cards/block-requests/{id}/approve` | Одобрить |
+| POST | `/admin/cards/block-requests/{id}/reject` | Отклонить |
+
+## Безопасность
+- Все маршруты защищены через Spring Security + JWT
+- **ADMIN** — полный доступ ко всем ресурсам
+- **USER** — доступ только к своим картам и данным
+- Номера карт шифруются через HashiCorp Vault
+- В ответах API номера карт маскируются (`**** **** **** 1234`)
+
+## Тестирование
+
+```bash
+# Запуск всех тестов
+./mvnw test
+
+# Запуск с отчётом о покрытии
+./mvnw test jacoco:report
+```
+
+## Полезные команды
+
+```bash
+# Проверка здоровья Elasticsearch
+curl http://localhost:9200/_cluster/health?pretty
+
+# Просмотр индексов логов
+curl http://localhost:9200/_cat/indices?v
+
+# Количество логов
+curl http://localhost:9200/bankcards-logs-*/_count
+
+# Очистка логов
+curl -X DELETE http://localhost:9200/bankcards-logs-*
+
+# Пересборка Docker-образа backend
+docker-compose build backend
+
+# Просмотр логов контейнера
+docker logs -f bankcards_backend
+```
+
+## Автор
 - Вениамин
+
