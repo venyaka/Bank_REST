@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <!-- Определение переменных -->
+    <property name="APP_NAME" value="bank-rest"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{40} - %msg%n"/>
+    <property name="LOG_PATTERN_COLORED" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %cyan([%thread]) %yellow(%logger{40}) - %msg%n"/>
+
+    <!-- Консольный вывод в JSON-формате для ELK -->
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <includeMdcKeyName>userEmail</includeMdcKeyName>
+            <includeMdcKeyName>clientIp</includeMdcKeyName>
+            <includeMdcKeyName>requestUri</includeMdcKeyName>
+            <includeMdcKeyName>httpMethod</includeMdcKeyName>
+
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <message>message</message>
+                <logger>logger</logger>
+                <thread>thread</thread>
+                <level>level</level>
+                <stackTrace>stackTrace</stackTrace>
+            </fieldNames>
+
+            <customFields>{"app":"${APP_NAME}","env":"${SPRING_PROFILES_ACTIVE:-dev}"}</customFields>
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxLength>2048</maxLength>
+                <shortenedClassNameLength>20</shortenedClassNameLength>
+                <rootCauseFirst>true</rootCauseFirst>
+            </throwableConverter>
+        </encoder>
+    </appender>
+
+    <!-- Консольный вывод с цветами для локальной разработки -->
+    <appender name="CONSOLE_PRETTY" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN_COLORED}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Уровни логирования для пакетов -->
+    <logger name="com.example.bankcards" level="DEBUG"/>
+    <logger name="com.example.bankcards.service" level="DEBUG"/>
+    <logger name="com.example.bankcards.controller" level="DEBUG"/>
+    <logger name="com.example.bankcards.security" level="DEBUG"/>
+    <logger name="com.example.bankcards.aspect" level="DEBUG"/>
+
+    <!-- Сторонние библиотеки -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework.security" level="INFO"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="liquibase" level="INFO"/>
+
+    <!-- Профиль для локальной разработки (человекочитаемый формат) -->
+    <springProfile name="dev,default">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_PRETTY"/>
+        </root>
+    </springProfile>
+
+    <!-- Профиль для Docker/Kubernetes/Production (JSON для ELK) -->
+    <springProfile name="prod,docker,k8s">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON"/>
+        </root>
+        <logger name="com.example.bankcards" level="INFO"/>
+    </springProfile>
+
+    <!-- Профиль для тестов -->
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_PRETTY"/>
+        </root>
+        <logger name="com.example.bankcards" level="DEBUG"/>
+    </springProfile>
+
+</configuration>
+
