@@ -71,6 +71,7 @@ public class SecurityConfig {
                         c
                                 .requestMatchers("/favicon.ico", "/css/**", "/js/**", "/images/**").permitAll()
                                 .requestMatchers("/swagger/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                                .requestMatchers("/docs/**").permitAll()
 
                                 .requestMatchers("/authorize/**").permitAll()
 

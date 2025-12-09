@@ -4,35 +4,57 @@ info:
   version: '1.0.0'
   description: |
     Полноценный REST API для управления пользователями, банковскими картами, авторизацией, запросами на блокировку и административными функциями.
-    Все защищённые эндпоинты требуют JWT Bearer-токен. Для админских функций требуется роль ADMIN.
+    
+    ## Аутентификация
+    Все защищённые эндпоинты требуют JWT Bearer-токен в заголовке Authorization.
+    Для админских функций требуется роль ADMIN.
+    
+    ## Основные возможности
+    - Регистрация и авторизация пользователей с верификацией email
+    - Управление банковскими картами (создание, блокировка, активация)
+    - Переводы между картами
+    - Запросы на блокировку карт
+    - Административная панель для управления пользователями и картами
   contact:
     name: Dev Team
     email: support@bankcards.local
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+
 servers:
   - url: http://localhost:8185
     description: Dev server
+  - url: http://localhost:8185
+    description: Docker server
+
 security:
   - bearerAuth: []
+
 tags:
-  - name: Users
-    description: Операции с пользователями
-  - name: Cards
-    description: Операции с картами
   - name: Auth
-    description: Авторизация и регистрация
-  - name: Admin
-    description: Административные функции
+    description: Авторизация, регистрация и верификация пользователей
+  - name: Users
+    description: Операции с текущим пользователем
+  - name: Cards
+    description: Операции с картами пользователя
   - name: BlockRequests
     description: Запросы на блокировку карт
+  - name: Admin - Users
+    description: Административное управление пользователями
+  - name: Admin - Cards
+    description: Административное управление картами
+  - name: Admin - BlockRequests
+    description: Административное управление запросами на блокировку
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT токен, полученный при авторизации
+
   schemas:
     UserRespDTO:
       type: object
@@ -40,9 +62,11 @@ components:
       properties:
         id:
           type: integer
+          format: int64
           example: 1
         email:
           type: string
+          format: email
           example: user@gmail.com
         firstName:
           type: string
@@ -55,6 +79,7 @@ components:
           items:
             $ref: '#/components/schemas/Role'
           example: [USER]
+
     UpdateCurrentUserReqDTO:
       type: object
       description: Запрос на обновление текущего пользователя
@@ -65,6 +90,7 @@ components:
         lastName:
           type: string
           example: Ильковв
+
     RegisterReqDTO:
       type: object
       description: Запрос на регистрацию пользователя
@@ -76,13 +102,15 @@ components:
           example: new@gmail.com
         password:
           type: string
-          example: 12345
+          minLength: 6
+          example: password123
         firstName:
           type: string
           example: Вениамин
         lastName:
           type: string
           example: Ильков
+
     UserAuthorizeReqDTO:
       type: object
       description: Запрос на авторизацию пользователя
@@ -95,70 +123,81 @@ components:
         password:
           type: string
           example: 12345678
+
     TokenRespDTO:
       type: object
       description: Ответ с access/refresh токенами
       properties:
         accessToken:
           type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         refreshToken:
           type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
     CardRespDTO:
       type: object
       description: Ответ с данными карты
       properties:
         id:
           type: integer
+          format: int64
           example: 1
         maskedCardNumber:
           type: string
           example: '**** **** **** 1234'
         ownerEmail:
           type: string
+          format: email
           example: user@gmail.com
         expireDate:
           type: string
           format: date
-          example: '2026-12-31'
+          example: '2028-12-31'
         status:
           $ref: '#/components/schemas/CardStatus'
         balance:
           type: number
-          format: double
+          format: decimal
           example: 1000.50
+
     CardBalanceRespDTO:
       type: object
       description: Ответ с балансом карты
       properties:
         cardId:
           type: integer
+          format: int64
           example: 1
         balance:
           type: number
-          format: double
+          format: decimal
           example: 1000.50
         status:
           $ref: '#/components/schemas/CardStatus'
+
     CardBlockRequestRespDTO:
       type: object
       description: Ответ с данными запроса на блокировку карты
       properties:
         id:
           type: integer
+          format: int64
           example: 1
         cardId:
           type: integer
+          format: int64
           example: 1
         cardMaskedNumber:
           type: string
           example: '**** **** **** 1234'
         userId:
           type: integer
+          format: int64
           example: 2
         userEmail:
           type: string
+          format: email
           example: user@gmail.com
         status:
           $ref: '#/components/schemas/CardBlockRequestStatus'
@@ -170,13 +209,16 @@ components:
           format: date-time
         adminComment:
           type: string
-          example: 'Причина блокировки: мошенничество.'
+          example: 'Причина блокировки: подозрительная активность.'
         adminId:
           type: integer
+          format: int64
           example: 3
         adminEmail:
           type: string
+          format: email
           example: admin@gmail.com
+
     CreateCardReqDTO:
       type: object
       description: Запрос на создание карты
@@ -184,7 +226,9 @@ components:
       properties:
         ownerId:
           type: integer
+          format: int64
           example: 1
+
     TransferReqDTO:
       type: object
       description: Запрос на перевод между картами
@@ -192,14 +236,18 @@ components:
       properties:
         fromCardId:
           type: integer
+          format: int64
           example: 1
         toCardId:
           type: integer
+          format: int64
           example: 2
         amount:
           type: number
-          format: double
+          format: decimal
+          minimum: 0.01
           example: 100.00
+
     CreateUserReqDTO:
       type: object
       description: Запрос на создание пользователя (админ)
@@ -208,9 +256,10 @@ components:
         email:
           type: string
           format: email
-          example: admin@gmail.com
+          example: newuser@gmail.com
         password:
           type: string
+          minLength: 6
           example: adminpass
         firstName:
           type: string
@@ -222,7 +271,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Role'
-          example: [ADMIN]
+          example: [USER]
+
     UpdateUserReqDTO:
       type: object
       description: Запрос на обновление пользователя (админ)
@@ -238,6 +288,29 @@ components:
           items:
             $ref: '#/components/schemas/Role'
           example: [ADMIN]
+
+    PageCardRespDTO:
+      type: object
+      description: Страница с картами (пагинация)
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardRespDTO'
+        totalElements:
+          type: integer
+          format: int64
+          example: 100
+        totalPages:
+          type: integer
+          example: 10
+        size:
+          type: integer
+          example: 10
+        number:
+          type: integer
+          example: 0
+
     BusinessExceptionRespDTO:
       type: object
       description: Ответ при бизнес-ошибке
@@ -250,7 +323,7 @@ components:
           example: 400
         error:
           type: string
-          example: 'Bad Request'
+          example: 'BAD_REQUEST'
         message:
           type: string
           example: 'Ошибка бизнес-логики'
@@ -260,6 +333,7 @@ components:
         debugInfo:
           type: string
           example: 'Stacktrace...'
+
     ValidationExceptionRespDTO:
       type: object
       description: Ответ при ошибке валидации
@@ -272,18 +346,17 @@ components:
           example: 422
         error:
           type: string
-          example: 'Validation Error'
+          example: 'VALIDATION_ERROR'
         message:
           type: string
           example: 'Ошибка валидации данных'
         path:
           type: string
-        debugInfo:
-          type: string
         constraintFailRespDTOList:
           type: array
           items:
             $ref: '#/components/schemas/ConstraintFailRespDTO'
+
     ConstraintFailRespDTO:
       type: object
       description: Ошибка отдельного поля
@@ -299,7 +372,8 @@ components:
           example: 'bademail'
         code:
           type: string
-          example: 'EmailError'
+          example: 'Email'
+
     CardStatus:
       type: string
       description: Статус карты
@@ -308,6 +382,7 @@ components:
         - BLOCKED
         - EXPIRED
       example: ACTIVE
+
     Role:
       type: string
       description: Роль пользователя
@@ -315,6 +390,7 @@ components:
         - USER
         - ADMIN
       example: USER
+
     CardBlockRequestStatus:
       type: string
       description: Статус запроса на блокировку карты
@@ -323,11 +399,145 @@ components:
         - APPROVED
         - REJECTED
       example: PENDING
+
+  responses:
+    UnauthorizedError:
+      description: Не авторизован (отсутствует или невалидный токен)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BusinessExceptionRespDTO'
+    ForbiddenError:
+      description: Доступ запрещён (недостаточно прав)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BusinessExceptionRespDTO'
+    NotFoundError:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BusinessExceptionRespDTO'
+    ValidationError:
+      description: Ошибка валидации данных
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationExceptionRespDTO'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BusinessExceptionRespDTO'
+
 paths:
+  # ==================== AUTH ====================
+  /authorize/login:
+    post:
+      tags: [Auth]
+      summary: Авторизация пользователя
+      description: |
+        Принимает email и password, возвращает access/refresh токены.
+        Также устанавливает HttpOnly cookies с токенами.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAuthorizeReqDTO'
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /authorize/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация нового пользователя
+      description: После регистрации на email отправляется код верификации.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterReqDTO'
+      responses:
+        '200':
+          description: Успешная регистрация, код верификации отправлен на email
+        '400':
+          description: Пользователь с таким email уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /authorize/verificateCode:
+    post:
+      tags: [Auth]
+      summary: Повторная отправка верификационного кода
+      description: Отправляет новый код верификации на указанный email.
+      security: []
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: Код отправлен
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /authorize/verification:
+    post:
+      tags: [Auth]
+      summary: Верификация пользователя
+      description: Подтверждает регистрацию по email и токену из письма.
+      security: []
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Успешная верификация
+        '400':
+          description: Неверный код верификации или пользователь уже верифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==================== USERS ====================
   /users/info:
     get:
       tags: [Users]
-      summary: Получение информации о текущем пользователе
+      summary: Получить информацию о текущем пользователе
       security:
         - bearerAuth: []
       responses:
@@ -337,15 +547,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /users/update:
     patch:
       tags: [Users]
-      summary: Обновление текущего пользователя
+      summary: Обновить данные текущего пользователя
       security:
         - bearerAuth: []
       requestBody:
         content:
           application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateCurrentUserReqDTO'
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/UpdateCurrentUserReqDTO'
       responses:
@@ -355,34 +571,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /users/logout:
     post:
       tags: [Users]
-      summary: Выход пользователя из системы
+      summary: Выход из системы
+      description: Очищает сессию и аутентификационные cookies.
       security:
         - bearerAuth: []
       responses:
         '200':
           description: Успешный выход
-  /cards/{id}:
-    get:
-      tags: [Cards]
-      summary: Получить карту по id
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Карта
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CardRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== CARDS ====================
   /cards:
     get:
       tags: [Cards]
@@ -391,27 +596,43 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: Список карт
+          description: Список карт пользователя
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/CardRespDTO'
-  /cards/transfer:
-    post:
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /cards/{id}:
+    get:
       tags: [Cards]
-      summary: Перевод между картами
+      summary: Получить карту по ID
       security:
         - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferReqDTO'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         '200':
-          description: Успешный перевод
+          description: Информация о карте
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /cards/{id}/balance:
     get:
       tags: [Cards]
@@ -424,6 +645,7 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
       responses:
         '200':
           description: Баланс карты
@@ -431,157 +653,163 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CardBalanceRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /cards/search:
     get:
       tags: [Cards]
-      summary: Поиск карт пользователя
+      summary: Поиск и пагинация карт пользователя
       security:
         - bearerAuth: []
       parameters:
         - name: query
           in: query
-          required: true
+          required: false
+          description: Строка поиска по номеру карты
           schema:
             type: string
         - name: page
           in: query
           required: false
+          description: Номер страницы (начиная с 0)
           schema:
             type: integer
+            default: 0
         - name: size
           in: query
           required: false
+          description: Размер страницы
           schema:
             type: integer
+            default: 10
+        - name: sort
+          in: query
+          required: false
+          description: Сортировка (например, id,desc)
+          schema:
+            type: string
       responses:
         '200':
-          description: Результаты поиска
+          description: Страница с картами
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  content:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CardRespDTO'
+                $ref: '#/components/schemas/PageCardRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /cards/transfer:
+    post:
+      tags: [Cards]
+      summary: Перевод между своими картами
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferReqDTO'
+      responses:
+        '200':
+          description: Перевод выполнен успешно
+        '400':
+          description: |
+            Ошибка перевода:
+            - Недостаточно средств
+            - Карта заблокирована
+            - Карта не принадлежит пользователю
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==================== BLOCK REQUESTS (User) ====================
   /cards/{id}/block-request:
     post:
       tags: [BlockRequests]
       summary: Запросить блокировку своей карты
-      description: Создаёт запрос на блокировку карты по её идентификатору.
+      description: Создаёт запрос на блокировку, который должен быть одобрен администратором.
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          description: Идентификатор карты
+          description: ID карты для блокировки
           schema:
             type: integer
+            format: int64
       responses:
         '200':
-          description: Запрос на блокировку
+          description: Запрос на блокировку создан
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CardBlockRequestRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /cards/block-requests:
     get:
       tags: [BlockRequests]
-      summary: Посмотреть свои запросы на блокировку карт
-      description: Возвращает список запросов на блокировку карт текущего пользователя.
+      summary: Получить свои запросы на блокировку
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Список запросов
+          description: Список запросов на блокировку
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/CardBlockRequestRespDTO'
-  /authorize/login:
-    post:
-      tags: [Auth]
-      summary: Авторизация пользователя
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserAuthorizeReqDTO'
-      responses:
-        '200':
-          description: Токены доступа
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenRespDTO'
-  /authorize/register:
-    post:
-      tags: [Auth]
-      summary: Регистрация нового пользователя
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterReqDTO'
-      responses:
-        '200':
-          description: Успешная регистрация
-  /authorize/verificateCode:
-    post:
-      tags: [Auth]
-      summary: Повторная отправка верификационного кода на почту
-      parameters:
-        - name: email
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Код отправлен
-  /authorize/verification:
-    post:
-      tags: [Auth]
-      summary: Верификация пользователя по email и токену
-      parameters:
-        - name: email
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: token
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Успешная верификация
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== ADMIN - USERS ====================
   /admin/users:
     get:
-      tags: [Admin]
-      summary: Получить всех пользователей (только для администратора)
+      tags: [Admin - Users]
+      summary: Получить всех пользователей
+      description: Только для администраторов
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Список пользователей
+          description: Список всех пользователей
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/UserRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
     post:
-      tags: [Admin]
-      summary: Создать пользователя (только для администратора)
+      tags: [Admin - Users]
+      summary: Создать пользователя
+      description: Только для администраторов
       security:
         - bearerAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -593,10 +821,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserRespDTO'
+        '400':
+          description: Пользователь с таким email уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
   /admin/users/{id}:
     patch:
-      tags: [Admin]
-      summary: Обновить пользователя (только для администратора)
+      tags: [Admin - Users]
+      summary: Обновить пользователя
+      description: Только для администраторов
       security:
         - bearerAuth: []
       parameters:
@@ -605,7 +847,9 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -617,9 +861,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
     delete:
-      tags: [Admin]
-      summary: Удалить пользователя (только для администратора)
+      tags: [Admin - Users]
+      summary: Удалить пользователя
+      description: Только для администраторов
       security:
         - bearerAuth: []
       parameters:
@@ -628,30 +879,46 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
       responses:
         '204':
-          description: Успешное удаление
+          description: Пользователь удалён
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==================== ADMIN - CARDS ====================
   /admin/cards:
     get:
-      tags: [Admin]
-      summary: Получить все карты (только для администратора)
+      tags: [Admin - Cards]
+      summary: Получить все карты
+      description: Только для администраторов
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Список карт
+          description: Список всех карт
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/CardRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
     post:
-      tags: [Admin]
-      summary: Создать новую карту (только для администратора)
+      tags: [Admin - Cards]
+      summary: Создать новую карту
+      description: Только для администраторов
       security:
         - bearerAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -663,40 +930,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CardRespDTO'
-  /admin/cards/{id}/block:
-    patch:
-      tags: [Admin]
-      summary: Заблокировать карту (только для администратора)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Карта заблокирована
-  /admin/cards/{id}/activate:
-    patch:
-      tags: [Admin]
-      summary: Активировать карту (только для администратора)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Карта активирована
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Владелец карты не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+
   /admin/cards/{id}:
     delete:
-      tags: [Admin]
-      summary: Удалить карту (только для администратора)
+      tags: [Admin - Cards]
+      summary: Удалить карту
+      description: Только для администраторов
       security:
         - bearerAuth: []
       parameters:
@@ -705,28 +954,125 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
       responses:
         '200':
           description: Карта удалена
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/cards/{id}/block:
+    patch:
+      tags: [Admin - Cards]
+      summary: Заблокировать карту
+      description: Только для администраторов
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Карта заблокирована
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/cards/{id}/activate:
+    patch:
+      tags: [Admin - Cards]
+      summary: Активировать карту
+      description: Только для администраторов
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Карта активирована
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/cards/{id}/test-balance:
+    patch:
+      tags: [Admin - Cards]
+      summary: Изменить баланс карты (тестовый endpoint)
+      description: |
+        **Только для тестирования!** Не использовать в продакшене.
+        Позволяет установить произвольный баланс карты.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: balance
+          in: query
+          required: true
+          description: Новый баланс карты
+          schema:
+            type: number
+            format: decimal
+      responses:
+        '204':
+          description: Баланс обновлён
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==================== ADMIN - BLOCK REQUESTS ====================
   /admin/cards/block-requests:
     get:
-      tags: [Admin]
-      summary: Получить все запросы на блокировку карт (только для администратора)
+      tags: [Admin - BlockRequests]
+      summary: Получить все запросы на блокировку
+      description: Только для администраторов
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Список запросов
+          description: Список всех запросов на блокировку
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/CardBlockRequestRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
   /admin/cards/block-requests/{requestId}/approve:
     post:
-      tags: [Admin]
-      summary: Подтвердить запрос на блокировку карты (только для администратора)
+      tags: [Admin - BlockRequests]
+      summary: Одобрить запрос на блокировку
+      description: Карта будет заблокирована после одобрения.
       security:
         - bearerAuth: []
       parameters:
@@ -735,22 +1081,31 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
         - name: comment
           in: query
-          required: true
+          required: false
+          description: Комментарий администратора
           schema:
             type: string
       responses:
         '200':
-          description: Запрос подтверждён
+          description: Запрос одобрен
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CardBlockRequestRespDTO'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /admin/cards/block-requests/{requestId}/reject:
     post:
-      tags: [Admin]
-      summary: Отклонить запрос на блокировку карты (только для администратора)
+      tags: [Admin - BlockRequests]
+      summary: Отклонить запрос на блокировку
       security:
         - bearerAuth: []
       parameters:
@@ -759,9 +1114,11 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
         - name: comment
           in: query
-          required: true
+          required: false
+          description: Комментарий администратора с причиной отклонения
           schema:
             type: string
       responses:
@@ -772,32 +1129,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/CardBlockRequestRespDTO'
         '401':
-          description: Не авторизован
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+          $ref: '#/components/responses/UnauthorizedError'
         '403':
-          description: Нет прав администратора
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+          $ref: '#/components/responses/ForbiddenError'
         '404':
-          description: Запрос не найден
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BusinessExceptionRespDTO'
-        '422':
-          description: Ошибка валидации
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationExceptionRespDTO'
-        '500':
-          description: Внутренняя ошибка сервера
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BusinessExceptionRespDTO'
+          $ref: '#/components/responses/NotFoundError'
+

@@ -58,7 +58,14 @@ card:
 springdoc:
   swagger-ui:
     enabled: true
+    path: /swagger-ui.html
     url: /docs/openapi.yaml
   api-docs:
     enabled: true
     path: /v3/api-docs
+
+# Настройки логирования (JSON для ELK в prod профиле)
+logging:
+  level:
+    root: INFO
+    com.example.bankcards: DEBUG
