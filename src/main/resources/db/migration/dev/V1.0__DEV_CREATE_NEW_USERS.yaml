@@ -1,7 +1,13 @@
 databaseChangeLog:
   - changeSet:
+      id: dev_create_admin_user
       author: Veniamin
-      id: create_users
+      context: dev
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM users WHERE email = 'admin@gmail.com'
       changes:
         - insert:
             tableName: users
@@ -21,9 +27,30 @@ databaseChangeLog:
               - column:
                   name: is_email_verificated
                   valueBoolean: true
-        - sql:
-            sql: INSERT INTO user_role(user_id, user_role) VALUES((SELECT id FROM users WHERE email='admin@gmail.com'), 'ADMIN')
 
+  - changeSet:
+      id: dev_create_admin_role
+      author: Veniamin
+      context: dev
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM user_role ur JOIN users u ON ur.user_id = u.id WHERE u.email = 'admin@gmail.com' AND ur.user_role = 'ADMIN'
+      changes:
+        - sql:
+            sql: INSERT INTO user_role(user_id, user_role) VALUES((SELECT id FROM users WHERE email = 'admin@gmail.com'), 'ADMIN')
+
+  - changeSet:
+      id: dev_create_regular_user
+      author: Veniamin
+      context: dev
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM users WHERE email = 'user@gmail.com'
+      changes:
         - insert:
             tableName: users
             columns:
@@ -42,5 +69,16 @@ databaseChangeLog:
               - column:
                   name: is_email_verificated
                   valueBoolean: true
+
+  - changeSet:
+      id: dev_create_user_role
+      author: Veniamin
+      context: dev
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM user_role ur JOIN users u ON ur.user_id = u.id WHERE u.email = 'user@gmail.com' AND ur.user_role = 'USER'
+      changes:
         - sql:
-            sql: INSERT INTO user_role(user_id, user_role) VALUES((SELECT id FROM users WHERE email='user@gmail.com'), 'USER')
+            sql: INSERT INTO user_role(user_id, user_role) VALUES((SELECT id FROM users WHERE email = 'user@gmail.com'), 'USER')

@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
-      author: Veniamin
       id: create_user_table
+      author: Veniamin
       preConditions:
         - onFail: MARK_RAN
         - not:
@@ -22,7 +22,7 @@ databaseChangeLog:
                   name: first_name
                   type: VARCHAR(255)
                   constraints:
-                    nullable:  false
+                    nullable: false
               - column:
                   name: last_name
                   type: VARCHAR(255)
@@ -46,23 +46,26 @@ databaseChangeLog:
                   name: token
                   type: VARCHAR(255)
                   constraints:
-                    nullable:
+                    nullable: true
               - column:
                   name: refresh_token
                   type: VARCHAR(255)
                   constraints:
-                    nullable:
+                    nullable: true
               - column:
                   name: date_create
                   type: TIMESTAMP
+                  constraints:
+                    nullable: true
               - column:
                   name: date_update
                   type: TIMESTAMP
-
+                  constraints:
+                    nullable: true
 
   - changeSet:
-      author: Veniamin
       id: create_user_roles_table
+      author: Veniamin
       preConditions:
         - onFail: MARK_RAN
         - not:
@@ -75,9 +78,13 @@ databaseChangeLog:
               - column:
                   name: user_id
                   type: BIGINT
+                  constraints:
+                    nullable: false
               - column:
                   name: user_role
                   type: VARCHAR(255)
+                  constraints:
+                    nullable: false
 
 
   - changeSet:
