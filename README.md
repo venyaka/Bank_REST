@@ -127,6 +127,7 @@ docker-compose --env-file credentials-dev.env up -d db vault vault-init pgadmin
 # 2. Опционально: запустите ELK Stack
 docker-compose --env-file credentials-dev.env up -d elasticsearch kibana logstash filebeat
 
+# 2.1 Опционально: запуск всего кроме backend и pgadmin
 docker-compose --env-file credentials-dev.env up -d elasticsearch kibana logstash filebeat db vault-init vault grafana prometheus
 
 # 3. В application.yml укажите:
