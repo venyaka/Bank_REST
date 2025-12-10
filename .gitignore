@@ -39,6 +39,10 @@ elk/data/
 ### VS Code ###
 .vscode/
 
-### Environment ###
-*.envmvnw
-mvnw.cmd
+### Environment (credentials with secrets) ###
+credentials-dev.env
+credentials-docker.env
+credentials.env
+
+### Monitoring data ###
+monitoring/data/
