@@ -15,6 +15,7 @@ import com.example.bankcards.service.CardService;
 import com.example.bankcards.util.CardEncryptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +37,7 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
      * {@inheritDoc}
      */
     @Override
+    @Transactional
     public CardBlockRequestRespDTO createBlockRequest(Long cardId, User user) {
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new NotFoundException(NotFoundError.CARD_NOT_FOUND));
@@ -81,6 +83,7 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
      * {@inheritDoc}
      */
     @Override
+    @Transactional
     public CardBlockRequestRespDTO approveBlockRequest(Long requestId, User admin, String comment) {
         CardBlockRequest request = blockRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(NotFoundError.BLOCK_REQUEST_NOT_FOUND));
@@ -105,6 +108,7 @@ public class CardBlockRequestServiceImpl implements CardBlockRequestService {
      * {@inheritDoc}
      */
     @Override
+    @Transactional
     public CardBlockRequestRespDTO rejectBlockRequest(Long requestId, User admin, String comment) {
         CardBlockRequest request = blockRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(NotFoundError.BLOCK_REQUEST_NOT_FOUND));
