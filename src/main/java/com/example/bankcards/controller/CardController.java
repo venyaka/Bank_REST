@@ -1,24 +1,23 @@
 package com.example.bankcards.controller;
 
 import com.example.bankcards.constant.PathConstants;
-import com.example.bankcards.dto.request.CreateCardReqDTO;
 import com.example.bankcards.dto.request.TransferReqDTO;
 import com.example.bankcards.dto.response.CardBalanceRespDTO;
 import com.example.bankcards.dto.response.CardRespDTO;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.exception.errors.NotFoundError;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.service.CardService;
 import com.example.bankcards.service.UserService;
-import com.example.bankcards.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,9 +35,7 @@ import java.util.List;
 public class CardController {
 
     private final CardService cardService;
-
     private final UserService userService;
-
     private final UserRepository userRepository;
 
 

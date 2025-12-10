@@ -3,14 +3,14 @@ package com.example.bankcards.controller;
 import com.example.bankcards.constant.PathConstants;
 import com.example.bankcards.dto.response.CardBlockRequestRespDTO;
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.exception.errors.NotFoundError;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.service.CardBlockRequestService;
 import com.example.bankcards.service.UserService;
-import com.example.bankcards.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import com.example.bankcards.exception.NotFoundException;
-import com.example.bankcards.exception.errors.NotFoundError;
 
 import java.util.List;
 
@@ -28,9 +28,7 @@ import java.util.List;
 public class CardBlockRequestController {
 
     private final CardBlockRequestService blockRequestService;
-
     private final UserService userService;
-
     private final UserRepository userRepository;
 
 
