@@ -3,6 +3,8 @@ server:
   forward-headers-strategy: framework
 
 spring:
+  application:
+    name: bankcards
   config:
     import: optional:file:credentials-dev.env[.properties]
   datasource:
@@ -69,3 +71,22 @@ logging:
   level:
     root: INFO
     com.example.bankcards: DEBUG
+
+# Spring Boot Actuator для мониторинга (Prometheus, Grafana)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when_authorized
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name:bankcards}
+    export:
+      prometheus:
+        enabled: true

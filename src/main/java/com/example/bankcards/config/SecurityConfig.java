@@ -1,6 +1,8 @@
 package com.example.bankcards.config;
 
+import com.example.bankcards.security.ExceptionHandlerFilter;
 import com.example.bankcards.security.RefreshTokenFilter;
+import com.example.bankcards.security.jwt.JwtTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,15 +10,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import com.example.bankcards.security.ExceptionHandlerFilter;
-import com.example.bankcards.security.jwt.JwtTokenFilter;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
 import java.util.Arrays;
 
@@ -72,6 +72,7 @@ public class SecurityConfig {
                                 .requestMatchers("/favicon.ico", "/css/**", "/js/**", "/images/**").permitAll()
                                 .requestMatchers("/swagger/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                 .requestMatchers("/docs/**").permitAll()
+                                .requestMatchers("/actuator/**").permitAll()
 
                                 .requestMatchers("/authorize/**").permitAll()
 

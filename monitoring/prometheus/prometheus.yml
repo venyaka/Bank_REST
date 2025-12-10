@@ -1,0 +1,31 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: [ 'localhost:9090' ]
+
+  # Spring Boot Application (локально через IDE)
+  - job_name: 'bankcards-backend-local'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'host.docker.internal:8185' ]
+    scrape_interval: 10s
+
+  # Spring Boot Application (в Docker)
+  - job_name: 'bankcards-backend-docker'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'backend:8185' ]
+    scrape_interval: 10s
+
+
+  # Elasticsearch
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: [ 'elasticsearch:9200' ]
+    metrics_path: '/_prometheus/metrics'
+

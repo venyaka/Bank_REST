@@ -21,18 +21,20 @@
 - ✅ ELK Stack (Elasticsearch, Logstash, Kibana, Filebeat)
 - ✅ JSON-логи для продакшена
 - ✅ Трассировка запросов (requestId, userId)
+- ✅ Мониторинг метрик (Prometheus + Grafana)
+- ✅ Дашборды с визуализацией (JVM, HTTP, DB connections)
 
 ## Технологии
-| Категория | Технологии |
-|-----------|------------|
-| Backend | Java 17, Spring Boot 3.5, Spring Security, Spring Data JPA |
-| База данных | PostgreSQL 12, Liquibase |
-| Безопасность | JWT, HashiCorp Vault |
-| Логирование | SLF4J, Logback, Logstash Encoder |
-| Мониторинг | Elasticsearch 8.11, Kibana 8.11, Logstash, Filebeat |
-| Документация | Swagger/OpenAPI 3.0 |
-| Контейнеризация | Docker, Docker Compose |
-| Тестирование | JUnit 5, Mockito |
+| Категория       | Технологии                                                                    |
+|-----------------|-------------------------------------------------------------------------------|
+| Backend         | Java 17, Spring Boot 3.5, Spring Security, Spring Data JPA                    |
+| База данных     | PostgreSQL 12, Liquibase                                                      |
+| Безопасность    | JWT, HashiCorp Vault                                                          |
+| Логирование     | SLF4J, Logback, Logstash Encoder                                              |
+| Мониторинг      | Prometheus, Grafana 10.2, Elasticsearch 8.11, Kibana 8.11, Logstash, Filebeat |
+| Документация    | Swagger/OpenAPI 3.0                                                           |
+| Контейнеризация | Docker, Docker Compose                                                        |
+| Тестирование    | JUnit 5, Mockito                                                              |
 
 ## Структура проекта
 ```
@@ -60,10 +62,15 @@ src/
 │       ├── application.yml   # Конфигурация приложения
 │       └── logback-spring.xml # Конфигурация логирования
 ├── test/                     # Юнит-тесты
-└── elk/                      # Конфигурация ELK Stack
-    ├── filebeat/
-    ├── logstash/
-    └── kibana/
+├── elk/                      # Конфигурация ELK Stack
+│   ├── filebeat/
+│   ├── logstash/
+│   └── kibana/
+└── monitoring/               # Конфигурация Prometheus + Grafana
+    ├── prometheus/
+    └── grafana/
+        ├── provisioning/
+        └── dashboards/
 ```
 
 ## Запуск проекта
@@ -120,6 +127,8 @@ docker-compose --env-file credentials-dev.env up -d db vault vault-init pgadmin
 # 2. Опционально: запустите ELK Stack
 docker-compose --env-file credentials-dev.env up -d elasticsearch kibana logstash filebeat
 
+docker-compose --env-file credentials-dev.env up -d elasticsearch kibana logstash filebeat db vault-init vault grafana prometheus
+
 # 3. В application.yml укажите:
 #    import: optional:file:credentials-dev.env[.properties]
 
@@ -128,14 +137,16 @@ docker-compose --env-file credentials-dev.env up -d elasticsearch kibana logstas
 
 ### Доступ к сервисам
 
-| Сервис | URL | Описание |
-|--------|-----|----------|
-| **Backend API** | http://localhost:8185 | REST API |
-| **Swagger UI** | http://localhost:8185/swagger-ui.html | Документация API |
-| **Kibana** | http://localhost:5601 | Визуализация логов |
-| **Elasticsearch** | http://localhost:9200 | Поиск по логам |
-| **pgAdmin** | http://localhost:5050 | Управление БД |
-| **Vault** | http://localhost:8200 | Управление секретами |
+| Сервис            | URL                                   | Описание             |
+|-------------------|---------------------------------------|----------------------|
+| **Backend API**   | http://localhost:8185                 | REST API             |
+| **Swagger UI**    | http://localhost:8185/swagger-ui.html | Документация API     |
+| **Grafana**       | http://localhost:3000                 | Дашборды и метрики   |
+| **Prometheus**    | http://localhost:9090                 | Сбор метрик          |
+| **Kibana**        | http://localhost:5601                 | Визуализация логов   |
+| **Elasticsearch** | http://localhost:9200                 | Поиск по логам       |
+| **pgAdmin**       | http://localhost:5050                 | Управление БД        |
+| **Vault**         | http://localhost:8200                 | Управление секретами |
 
 ## Логирование
 
@@ -192,6 +203,59 @@ executionTimeMs > 1000
 
 # Операции с картами
 logger: "CardServiceImpl"
+```
+
+## Мониторинг (Prometheus + Grafana)
+
+### Архитектура
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Spring App │ ──► │  Prometheus │ ──► │   Grafana   │
+│  (Actuator) │     │   (Scrape)  │     │ (Dashboard) │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+### Доступные метрики
+
+- **JVM**: память (heap/non-heap), потоки, GC
+- **HTTP**: запросы в секунду, время ответа, ошибки по endpoint
+- **Database**: HikariCP connections (active/idle/pending)
+- **System**: CPU usage, uptime
+
+### Настройка Grafana
+
+1. Откройте http://localhost:3000
+2. Логин: `admin` / Пароль: `admin`
+3. Дашборд `Bank Cards - Application Metrics` уже настроен
+
+### Prometheus Endpoints
+
+```bash
+# Health check
+curl http://localhost:8185/actuator/health
+
+# Metrics в формате Prometheus
+curl http://localhost:8185/actuator/prometheus
+
+# Список всех метрик
+curl http://localhost:8185/actuator/metrics
+```
+
+### Полезные PromQL запросы
+
+```promql
+# CPU usage (%)
+system_cpu_usage * 100
+
+# Memory usage (%)
+jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} * 100
+
+# Request rate
+rate(http_server_requests_seconds_count[1m])
+
+# Error rate (5xx)
+sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
 ```
 
 ## API Эндпоинты
